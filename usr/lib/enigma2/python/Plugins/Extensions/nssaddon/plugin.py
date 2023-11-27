@@ -2706,7 +2706,7 @@ class SelectPiconz(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Picons'')
+        self.setup_title = ('NSS Addon Picons')
         Screen.__init__(self, session)
         self.setTitle(_(title_plug))
         self['list'] = nssList([])
