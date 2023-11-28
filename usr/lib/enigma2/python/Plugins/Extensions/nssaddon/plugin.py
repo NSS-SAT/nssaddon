@@ -291,6 +291,7 @@ Panel_list = [
  _('DAILY SETTINGS'),
  _('DEPENDENCIES'),
  _('DRIVERS'),
+ _('SETTING CHANNEL NSS'),
  _('PLUGIN BACKUP'),
  _('PLUGIN EPG'),
  _('PLUGIN EMULATORS CAMS'),
@@ -503,6 +504,9 @@ class HomeNss(Screen):
             self.session.open(Categories, category)
         if sel == _('DRIVERS'):
             category = 'Drivers.xml'
+            self.session.open(Categories, category)
+        if sel == _('SETTING CHANNEL NSS'):
+            category = 'Settingchannelnss.xml'
             self.session.open(Categories, category)
         if sel == _('DEPENDENCIES'):
             category = 'Dependencies.xml'
