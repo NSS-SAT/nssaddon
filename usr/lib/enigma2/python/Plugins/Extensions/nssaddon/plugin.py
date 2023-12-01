@@ -223,7 +223,6 @@ config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
 config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/media/hdd/picon/')
 config.plugins.nssaddon.strtmain = ConfigYesNo(default=True)
 config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
-# config.plugins.nssaddon.autoupd = ConfigYesNo(default=False)
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
 currversion = '1.0.0'
 title_plug = '..:: NSS Addon Panel V. %s ::..' % currversion
@@ -289,9 +288,9 @@ Panel_list = [
  _('LULULLA CORNER'),
  _('DAILY PICONS'),
  _('DAILY SETTINGS'),
+ _('SETTING CHANNEL NSS'),
  _('DEPENDENCIES'),
  _('DRIVERS'),
- _('SETTING CHANNEL NSS'),
  _('PLUGIN BACKUP'),
  _('PLUGIN EPG'),
  _('PLUGIN EMULATORS CAMS'),
@@ -441,7 +440,7 @@ class HomeNss(Screen):
             dependencies = False
         if dependencies is False:
             chmod("/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh", 0o0755)
-            cmd1 = ". /usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh"
+            cmd1 = "/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh"
             self.session.openWithCallback(self.starts, tvConsole, title="Checking Python Dependencies", cmdlist=[cmd1], closeOnSuccess=False)
         else:
             self.starts()
@@ -497,6 +496,9 @@ class HomeNss(Screen):
         sel = self.menu_list[idx]
         if sel == _('DAILY SETTINGS'):
             self.session.open(NssDailySetting)
+        if sel == _('SETTING CHANNEL NSS'):
+            category = 'Settingchannelnss.xml'
+            self.session.open(Categories, category)
         if sel == _('DAILY PICONS'):
             self.session.open(SelectPiconz)
         if sel == _('LULULLA CORNER'):
@@ -504,9 +506,6 @@ class HomeNss(Screen):
             self.session.open(Categories, category)
         if sel == _('DRIVERS'):
             category = 'Drivers.xml'
-            self.session.open(Categories, category)
-        if sel == _('SETTING CHANNEL NSS'):
-            category = 'Settingchannelnss.xml'
             self.session.open(Categories, category)
         if sel == _('DEPENDENCIES'):
             category = 'Dependencies.xml'
@@ -553,7 +552,8 @@ class HomeNss(Screen):
         if sel == _('PLUGIN WEATHER'):
             category = 'PluginWeather.xml'
             self.session.open(Categories, category)
-        return
+        else:
+            return
 
 
 class Categories(Screen):
@@ -743,6 +743,8 @@ class NssDailySetting(Screen):
             self.okSATELLITE()
         elif sel == _('UPDATE TERRESTRIAL.XML'):
             self.okTERRESTRIAL()
+        else:
+            return
 
     def terrestrial_restore(self, answer=None):
         if answer is None:
@@ -983,7 +985,6 @@ class SettingVhan2(Screen):
                     dest = "/tmp/settings.zip"
 
                     if 'dtt' not in url.lower():
-                        # if not os.path.exists('/var/lib/dpkg/status'):
                         set = 1
                         terrestrial()
 
@@ -1088,7 +1089,6 @@ class Milenka61(Screen):
         self.urls = []
         try:
             regex = '<a href="Satvenus(.+?)".*?align="right">(.*?) </td>'
-            # regex = '<a href="Satvenus(.+?)".+?align="right">(.*?)-(.*?)-(.*?) .+?</td'
             match = re.compile(regex).findall(r)
             for url, txt in match:
                 if url.find('.tar.gz') != -1:
@@ -1863,9 +1863,6 @@ class NssInstall(Screen):
         global set
         self.com = com
         self.dom = dom
-        # n2 = self.com.rfind("/", 0)
-        # dom = self.com[:n2]
-        # self.downplug = self.com.replace(dom, '').replace('/', '').lower()
         self.downplug = self.com.split("/")[-1]
         print('self.downplug= ', self.downplug)
         self.dest = '/tmp/' + self.downplug
@@ -2199,21 +2196,22 @@ class NssIPK(Screen):
         self.getfreespace()
 
     def msgipkrmv(self, answer=None):
-        idx = self['list'].getSelectionIndex()
-        self.sel = self.names[idx]
-        if answer is None:
-            self.session.openWithCallback(self.msgipkrmv, MessageBox, (_('Do you really want to remove selected?\n') + self.sel), MessageBox.TYPE_YESNO)
-        else:
-            self['info'].setText(_('... please wait'))
-            self.com = self.ipkpth + '/' + self.sel
-            if fileExists(self.com):
-                os.remove(self.com)
-                self.session.open(MessageBox, (_("%s has been successfully deleted\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
-                i = len(self.list)
-                del self.list[0:i]
+        if len(self.names) >= 0:
+            idx = self['list'].getSelectionIndex()
+            self.sel = self.names[idx]
+            if answer is None:
+                self.session.openWithCallback(self.msgipkrmv, MessageBox, (_('Do you really want to remove selected?\n') + self.sel), MessageBox.TYPE_YESNO)
             else:
-                self.session.open(MessageBox, (_("%s not exist!\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
-        self.refreshlist()
+                self['info'].setText(_('... please wait'))
+                self.com = self.ipkpth + '/' + self.sel
+                if fileExists(self.com):
+                    os.remove(self.com)
+                    self.session.open(MessageBox, (_("%s has been successfully deleted\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
+                    i = len(self.list)
+                    del self.list[0:i]
+                else:
+                    self.session.open(MessageBox, (_("%s not exist!\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
+            self.refreshlist()
 
     def getfreespace(self):
         try:
@@ -2226,77 +2224,78 @@ class NssIPK(Screen):
         self.session.open(nssConfig)
 
     def ipkinst(self, answer=None):
-        idx = self['list'].getSelectionIndex()
-        self.sel = self.names[idx]
-        if answer is None:
-            self.session.openWithCallback(self.ipkinst, MessageBox, (_('Do you really want to install the selected Addon?\n') + self.sel), MessageBox.TYPE_YESNO)
-        else:
-            self['info'].setText(_('... please wait'))
-            self.dest = self.ipkpth + '/' + self.sel
-            try:
-                if self.sel.endswith('.ipk'):
-                    cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";opkg install --force-reinstall ' + self.dest + ' > /dev/null'
-                    self.session.open(tvConsole, title='IPK Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
-                elif self.sel.endswith('.tar.gz'):
-                    cmd0 = 'tar -xzvf ' + self.dest + ' -C /'
-                    self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
-                elif self.sel.endswith('.deb'):
-                    if os.path.exists('/var/lib/dpkg/info'):
-                        # apt-get install -f -y
-                        cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";apt-get install -f -y %s > /dev/null' % self.dest
-                        self.session.open(tvConsole, title='DEB Local Installation', cmdlist=[cmd0], closeOnSuccess=False)
+        if len(self.names) >= 0:
+            idx = self['list'].getSelectionIndex()
+            self.sel = self.names[idx]
+            if answer is None:
+                self.session.openWithCallback(self.ipkinst, MessageBox, (_('Do you really want to install the selected Addon?\n') + self.sel), MessageBox.TYPE_YESNO)
+            else:
+                self['info'].setText(_('... please wait'))
+                self.dest = self.ipkpth + '/' + self.sel
+                try:
+                    if self.sel.endswith('.ipk'):
+                        cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";opkg install --force-reinstall ' + self.dest + ' > /dev/null'
+                        self.session.open(tvConsole, title='IPK Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
+                    elif self.sel.endswith('.tar.gz'):
+                        cmd0 = 'tar -xzvf ' + self.dest + ' -C /'
+                        self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
+                    elif self.sel.endswith('.deb'):
+                        if os.path.exists('/var/lib/dpkg/info'):
+                            # apt-get install -f -y
+                            cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";apt-get install -f -y %s > /dev/null' % self.dest
+                            self.session.open(tvConsole, title='DEB Local Installation', cmdlist=[cmd0], closeOnSuccess=False)
+                        else:
+                            self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
+                    elif self.sel.endswith('.zip'):
+                        if 'picon' in self.sel.lower():
+                            self.timer = eTimer()
+                            self.timer.start(500, True)
+                            cmd = ['unzip -o -q %s -d %s' % (self.dest, str(mmkpicon))]
+                            self.session.open(tvConsole, _('Installing: %s') % self.dest, cmdlist=[cmd], closeOnSuccess=False)
+                        elif 'setting' in self.sel.lower():
+                            if not os.path.exists('/var/lib/dpkg/status'):
+                                global set
+                                set = 1
+                                terrestrial()
+                            if os.path.exists("/tmp/unzipped"):
+                                os.system('rm -rf /tmp/unzipped')
+                            os.makedirs('/tmp/unzipped')
+                            cmd = []
+                            cmd1 = 'unzip -o -q %s -d /tmp/unzipped' % self.dest
+                            cmd.append(cmd1)
+                            cmd2 = 'rm -rf /etc/enigma2/lamedb'
+                            cmd.append(cmd2)
+                            cmd3 = 'rm -rf /etc/enigma2/*.radio'
+                            cmd.append(cmd3)
+                            cmd4 = 'rm -rf /etc/enigma2/*.tv'
+                            cmd.append(cmd4)
+                            cmd5 = 'cp -rf /tmp/unzipped/*.tv /etc/enigma2'
+                            cmd.append(cmd5)
+                            cmd6 = 'cp -rf /tmp/unzipped/*.radio /etc/enigma2'
+                            cmd.append(cmd6)
+                            cmd7 = 'cp -rf /tmp/unzipped/lamedb /etc/enigma2'
+                            cmd.append(cmd7)
+                            if not os.path.exists("/etc/enigma2/blacklist"):
+                                cmd8 = 'cp -rf /tmp/unzipped/blacklist /etc/tuxbox/'
+                                cmd.append(cmd8)
+                            if not os.path.exists("/etc/enigma2/whitelist"):
+                                cmd9 = 'cp -rf /tmp/unzipped/whitelist /etc/tuxbox/'
+                                cmd.append(cmd9)
+                            cmd10 = 'cp -rf /tmp/unzipped/satellites.xml /etc/tuxbox/'
+                            cmd.append(cmd10)
+                            cmd11 = 'cp -rf /tmp/unzipped/terrestrial.xml /etc/tuxbox/'
+                            cmd.append(cmd11)
+                            self.timer = eTimer()
+                            terrestrial_rest()
+                            self.timer.start(500, True)
+                            self.session.open(tvConsole, _('SETTING - install: %s') % self.dest, cmdlist=[cmd], closeOnSuccess=False)
                     else:
-                        self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
-                elif self.sel.endswith('.zip'):
-                    if 'picon' in self.sel.lower():
-                        self.timer = eTimer()
-                        self.timer.start(500, True)
-                        cmd = ['unzip -o -q %s -d %s' % (self.dest, str(mmkpicon))]
-                        self.session.open(tvConsole, _('Installing: %s') % self.dest, cmdlist=[cmd], closeOnSuccess=False)
-                    elif 'setting' in self.sel.lower():
-                        if not os.path.exists('/var/lib/dpkg/status'):
-                            global set
-                            set = 1
-                            terrestrial()
-                        if os.path.exists("/tmp/unzipped"):
-                            os.system('rm -rf /tmp/unzipped')
-                        os.makedirs('/tmp/unzipped')
-                        cmd = []
-                        cmd1 = 'unzip -o -q %s -d /tmp/unzipped' % self.dest
-                        cmd.append(cmd1)
-                        cmd2 = 'rm -rf /etc/enigma2/lamedb'
-                        cmd.append(cmd2)
-                        cmd3 = 'rm -rf /etc/enigma2/*.radio'
-                        cmd.append(cmd3)
-                        cmd4 = 'rm -rf /etc/enigma2/*.tv'
-                        cmd.append(cmd4)
-                        cmd5 = 'cp -rf /tmp/unzipped/*.tv /etc/enigma2'
-                        cmd.append(cmd5)
-                        cmd6 = 'cp -rf /tmp/unzipped/*.radio /etc/enigma2'
-                        cmd.append(cmd6)
-                        cmd7 = 'cp -rf /tmp/unzipped/lamedb /etc/enigma2'
-                        cmd.append(cmd7)
-                        if not os.path.exists("/etc/enigma2/blacklist"):
-                            cmd8 = 'cp -rf /tmp/unzipped/blacklist /etc/tuxbox/'
-                            cmd.append(cmd8)
-                        if not os.path.exists("/etc/enigma2/whitelist"):
-                            cmd9 = 'cp -rf /tmp/unzipped/whitelist /etc/tuxbox/'
-                            cmd.append(cmd9)
-                        cmd10 = 'cp -rf /tmp/unzipped/satellites.xml /etc/tuxbox/'
-                        cmd.append(cmd10)
-                        cmd11 = 'cp -rf /tmp/unzipped/terrestrial.xml /etc/tuxbox/'
-                        cmd.append(cmd11)
-                        self.timer = eTimer()
-                        terrestrial_rest()
-                        self.timer.start(500, True)
-                        self.session.open(tvConsole, _('SETTING - install: %s') % self.dest, cmdlist=[cmd], closeOnSuccess=False)
-                else:
-                    self.session.open(MessageBox, _('Unknow Error!'), MessageBox.TYPE_ERROR, timeout=10)
-                self['info'].setText(_('Please install ...'))
-            except Exception as e:
-                print('error: ', str(e))
-                self.delFile(self.dest)
-                self['info1'].text = _('File: %s\nInstallation failed!') % self.dest
+                        self.session.open(MessageBox, _('Unknow Error!'), MessageBox.TYPE_ERROR, timeout=10)
+                    self['info'].setText(_('Please install ...'))
+                except Exception as e:
+                    print('error: ', str(e))
+                    self.delFile(self.dest)
+                    self['info1'].text = _('File: %s\nInstallation failed!') % self.dest
 
     def delFile(self, dest):
         if fileExists(self.dest):
@@ -2521,16 +2520,17 @@ class ScriptExecuter(Screen):
         mysel = self['list'].getCurrent()
         if mysel:
             mytext = ' ' + mysel[1]
-            self['labstatus'].setText(mytext)
+            self['labstatus'].setText(str(mytext))
 
     def startScript(self):
-        mysel = self['list'].getCurrent()
-        if mysel:
-            mysel = mysel[0]
-            mysel2 = '/usr/script/' + mysel + '.sh'
-            chmod(mysel2, 0o0755)
-            mytitle = 'NonSoloSat Script: ' + mysel
-            self.session.open(tvConsole, title=mytitle, cmdlist=[mysel2])
+        if len(self.mlist) >= 0:
+            mysel = self['list'].getCurrent()
+            if mysel:
+                mysel = mysel[0]
+                mysel2 = '/usr/script/' + mysel + '.sh'
+                chmod(mysel2, 0o0755)
+                mytitle = 'NonSoloSat Script: ' + mysel
+                self.session.open(tvConsole, title=mytitle, cmdlist=[mysel2])
 
 
 class nssConfig(Screen, ConfigListScreen):
@@ -3007,11 +3007,7 @@ class MMarkPiconsf(Screen):
                 myfile = Utils.ReadUrl(url)
                 regexcat = 'href="https://download(.*?)"'
                 match = re.compile(regexcat, re.DOTALL).findall(myfile)
-                # myfile = checkMyFile(url)
-                # print('myfile222:  ', myfile)
                 url = 'https://download' + str(match[0])
-                # from . import Downloader
-                # self.download = Downloader.downloadWithProgress(url, dest)
                 self.download = downloadWithProgress(url, dest)
                 self.download.addProgress(self.downloadProgress)
                 self.download.start().addCallback(self.install).addErrback(self.download_failed)
@@ -3062,36 +3058,6 @@ class MMarkPiconsf(Screen):
     def download_finished(self, string=""):
         if self.aborted:
             self.finish(aborted=True)
-
-
-# class AutoStartTimertvadd:
-
-    # def __init__(self, session):
-        # self.session = session
-        # global _firstStarttvsadd
-        # print("*** running AutoStartTimertvadd ***")
-        # if _firstStarttvsadd:
-            # self.runUpdate()
-
-    # def runUpdate(self):
-        # print("*** running update ***")
-        # try:
-            # from . import Update
-            # Update.upd_done()
-            # _firstStarttvsadd = False
-        # except Exception as e:
-            # print('error nssaddon', str(e))
-
-
-# def autostart(reason, session=None, **kwargs):
-    # print("*** running autostart ***")
-    # global autoStartTimertvsadd
-    # global _firstStarttvsadd
-    # if reason == 0:
-        # if session is not None:
-            # _firstStarttvsadd = True
-            # autoStartTimertvsadd = AutoStartTimertvadd(session)
-    # return
 
 
 def main(session, **kwargs):

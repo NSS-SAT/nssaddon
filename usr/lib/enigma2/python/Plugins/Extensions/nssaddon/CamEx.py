@@ -96,8 +96,10 @@ class NSSCamsManager(Screen):
         except:
             self.oldService = self.session.nav.getCurrentlyPlayingServiceOrGroup()
         self['actions'] = ActionMap(['OkCancelActions',
+                                     'MenuActions',
                                      'ColorActions'], {'ok': self.action,
                                                        'cancel': self.close,
+                                                       'menu': self.confignss,
                                                        'green': self.action,
                                                        'yellow': self.stardown,
                                                        'blue': self.messagekd,
@@ -127,13 +129,17 @@ class NSSCamsManager(Screen):
         self.onShown.append(self.openCCcamInfo)
         self.onHide.append(self.stopEcmInfoPollTimer)
 
+    def confignss(self):
+        from Plugins.Extensions.nssaddon.lib.datas import cccConfig
+        self.session.open(cccConfig)
+
     def messagekd(self):
         self.session.openWithCallback(self.keysdownload, MessageBox, _('Update SoftcamKeys from google search?'), MessageBox.TYPE_YESNO)
 
     def keysdownload(self, result):
         if result:
             # script = ("sed -i -e 's/\r$//' %sauto" % plugin_path)
-            script = ("%sauto.sh" % plugin_path)
+            script = (". %sauto.sh" % plugin_path)
             from os import access, X_OK
             if not access(script, X_OK):
                 os.chmod(script, 493)
