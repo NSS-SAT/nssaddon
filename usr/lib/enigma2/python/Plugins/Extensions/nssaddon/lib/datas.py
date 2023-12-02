@@ -360,7 +360,11 @@ class cccConfig(Screen, ConfigListScreen):
                     from os import access, X_OK
                     if not access(self.cmd1, X_OK):
                         os.chmod(self.cmd1, 493)
-                    os.system(self.cmd1)
+                    # os.system(self.cmd1)
+                    import subprocess
+                    subprocess.check_output(['bash', self.cmd1])
+                    # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            
                     os.system('sleep 5')
                     if not os.path.exists('/tmp/emm.txt'):
                         # import wget
@@ -394,7 +398,10 @@ class cccConfig(Screen, ConfigListScreen):
             from os import access, X_OK
             if not access(self.cmd1, X_OK):
                 os.chmod(self.cmd1, 493)
-            os.system(self.cmd1)
+            # os.system(self.cmd1)
+            import subprocess
+            subprocess.check_output(['bash', self.cmd1])
+            # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
             os.system('sleep 5')
             if not os.path.exists('/tmp/emm.txt'):
                 # import wget
@@ -466,8 +473,11 @@ class cccConfig(Screen, ConfigListScreen):
             from os import access, X_OK
             if not access(self.cmd1, X_OK):
                 os.chmod(self.cmd1, 493)
-            self.cmd2 = '. ' + self.cmd1
-            os.system(self.cmd2)
+            # self.cmd2 = '. ' + self.cmd1
+            # os.system(self.cmd1)
+            import subprocess
+            subprocess.check_output(['bash', self.cmd1])
+            # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
             os.system('sleep 3')
             if os.path.exists('/tmp/emm.txt'):
                 msg.append(_("READ EMM....\n"))
