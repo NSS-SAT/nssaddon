@@ -139,14 +139,22 @@ class NSSCamsManager(Screen):
     def keysdownload(self, result):
         if result:
             # script = ("sed -i -e 's/\r$//' %sauto" % plugin_path)
-            script = (". %sauto.sh" % plugin_path)
+            script = ("%sauto.sh" % plugin_path)
             from os import access, X_OK
             if not access(script, X_OK):
                 os.chmod(script, 493)
                 # os.system("sed -i -e 's/\r$//' %sauto.sh" % plugin_path)
                 # os.system("sed -i -e 's/^M$//' %sauto.sh" % plugin_path)
-            os.system("os2unix %s" % script)
-            self.session.open(Console, _('Update Softcam.key: %s') % script, ['%s' % script])
+            # os.system("os2unix %s" % script)
+            # self.session.open(Console, _('Update Softcam.key: %s') % script, ['%s' % script])
+            import subprocess
+            try:
+                subprocess.check_output(['bash', script])
+                self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            except subprocess.CalledProcessError as e:
+                print(e.output)
+                self.session.open(MessageBox, _('SoftcamKeys Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            
 
     def setEcmInfo(self):
         try:
