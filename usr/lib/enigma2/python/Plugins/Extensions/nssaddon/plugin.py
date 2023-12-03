@@ -1864,28 +1864,24 @@ class NssInstall(Screen):
         self.com = com
         self.dom = dom
         self.downplug = self.com.split("/")[-1]
-        print('self.downplug= ', self.downplug)
-        self.dest = '/tmp/' + self.downplug
-        if os.path.exists(self.dest):
-            os.remove(self.dest)
+        down = self.dowfil()
         self['info'].setText(_('Installing ') + self.dom + _('... please wait'))
         if self.com is not None:
             self.timer = eTimer()
             extensionlist = self.com.split('.')
             extension = extensionlist[-1]  # .lower()
-
             if len(extensionlist) > 1:
                 tar = extensionlist[-2]
             if extension in ["gz", "bz2"] and tar == "tar":
                 self.command = ['']
                 if extension == "gz":
-                    self.command = ["tar -xzvf " + self.dest + " -C /"]
+                    self.command = ["tar -xzvf " + down + " -C /"]
                 elif extension == "bz2":
-                    self.command = ["tar -xjvf " + self.dest + " -C /"]
+                    self.command = ["tar -xjvf " + down + " -C /"]
 
-                cmd = "wget -U '%s' -c '%s' -O '%s';%s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.command[0])
+                cmd = "wget -U '%s' -c '%s' -O '%s';%s > /dev/null" % (AgentRequest, str(self.com), down, self.command[0])
                 if "https" in str(self.com):
-                    cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';%s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.command[0])
+                    cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';%s > /dev/null" % (AgentRequest, str(self.com), down, self.command[0])
 
                 self.session.open(tvConsole, title='Installation %s' % self.dom, cmdlist=[cmd, 'sleep 5'])  # , finishedCallback=self.msgipkinst)
                 self['info'].setText(_('Installation done !!!'))
@@ -1901,9 +1897,7 @@ class NssInstall(Screen):
                     if 'wget' not in res.lower():
                         cmd23 = 'apt-get update && apt-get install wget'
                         os.popen(cmd23)
-
-                    self.dest = self.dowfil()
-                    cmd = 'dpkg -i %s' % self.dest
+                    cmd = 'dpkg -i %s' % down
                     # cmd = 'dpkg --install --force-overwrite %s' % self.dest
                     # cmd = "wget -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     # if "https" in str(self.com):
@@ -1916,8 +1910,7 @@ class NssInstall(Screen):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Installation canceled!'))
                 else:
-                    self.dest = self.dowfil()
-                    cmd = "opkg install --force-reinstall %s > /dev/null" % self.dest
+                    cmd = "opkg install --force-reinstall %s > /dev/null" % down
                     # cmd = "wget -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     # if "https" in str(self.com):
                         # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
@@ -1962,8 +1955,7 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
                     return
                 elif 'picon' in self.dom.lower():
-                    self.dest = self.dowfil()
-                    cmd = ["unzip -o -q %s -d %s > /dev/null" % (self.dest, str(mmkpicon))]
+                    cmd = ["unzip -o -q %s -d %s > /dev/null" % (down, str(mmkpicon))]
                     # cmd = ["wget -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
                     # if "https" in str(self.com):
                         # cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
@@ -1972,8 +1964,7 @@ class NssInstall(Screen):
                     return
                 else:
                     self['info'].setText(_('Downloading the selected file in /tmp') + self.dom + _('... please wait'))
-                    self.dest = self.dowfil()
-                    cmd = ["wget -U '%s' -c '%s' -O '%s > /dev/null' " % (RequestAgent(), str(self.com), self.dest)]
+                    cmd = ["wget -U '%s' -c '%s' -O '%s > /dev/null' " % (RequestAgent(), str(self.com), down)]
                     # cmd = ["wget -U '%s' -c '%s' -O '%s > /dev/null' " % (RequestAgent(), str(self.com), self.dest)]
                     # if "https" in str(self.com):
                         # cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s'" % (RequestAgent(), str(self.com), self.dest)]
@@ -1990,6 +1981,9 @@ class NssInstall(Screen):
             self.addondel()
 
     def dowfil(self):
+        self.dest = '/tmp/' + self.downplug
+        if os.path.exists(self.dest):
+            os.remove(self.dest)
         if PY3:
             import urllib.request as urllib2
             import http.cookiejar as cookielib

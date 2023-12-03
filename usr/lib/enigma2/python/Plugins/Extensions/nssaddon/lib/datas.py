@@ -362,9 +362,13 @@ class cccConfig(Screen, ConfigListScreen):
                         os.chmod(self.cmd1, 493)
                     # os.system(self.cmd1)
                     import subprocess
-                    subprocess.check_output(['bash', self.cmd1])
-                    # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
-            
+                    # subprocess.check_output(['bash', self.cmd1])   
+                    try:
+                        subprocess.check_output(['bash', self.cmd1])
+                        self.session.open(MessageBox, _('Card Updated!'), MessageBox.TYPE_INFO, timeout=5)
+                    except subprocess.CalledProcessError as e:
+                        print(e.output)
+                        self.session.open(MessageBox, _('Card Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
                     os.system('sleep 5')
                     if not os.path.exists('/tmp/emm.txt'):
                         # import wget
@@ -400,14 +404,24 @@ class cccConfig(Screen, ConfigListScreen):
                 os.chmod(self.cmd1, 493)
             # os.system(self.cmd1)
             import subprocess
-            subprocess.check_output(['bash', self.cmd1])
-            # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            # subprocess.check_output(['bash', self.cmd1])
+            try:
+                subprocess.check_output(['bash', self.cmd1])
+                self.session.open(MessageBox, _('Card Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            except subprocess.CalledProcessError as e:
+                print(e.output)
+                self.session.open(MessageBox, _('Card Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
             os.system('sleep 5')
             if not os.path.exists('/tmp/emm.txt'):
                 # import wget
                 outp = base64.b64decode(sss)
                 url = str(outp)
-                subprocess.call(["wget", "-q", "--no-use-server-timestamps", "--no-clobber", "--timeout=5", url, "-O", '/tmp/emm.txt'])
+                # cmd = 'wget -q --no-use-server-timestamps --no-clobber --timeout=5' + url + ' -O /tmp/emm.txt'
+                try:
+                    # subprocess.check_output(['bash', cmd])
+                    subprocess.call(["wget", "-q", "--no-use-server-timestamps", "--no-clobber", "--timeout=5", url, "-O", '/tmp/emm.txt'])
+                except subprocess.CalledProcessError as e:
+                    print(e.output)
             if os.path.exists('/tmp/emm.txt'):
                 msg.append(_("READ EMM....\n"))
                 with open('/tmp/emm.txt') as f:
@@ -476,8 +490,11 @@ class cccConfig(Screen, ConfigListScreen):
             # self.cmd2 = '. ' + self.cmd1
             # os.system(self.cmd1)
             import subprocess
-            subprocess.check_output(['bash', self.cmd1])
-            # self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
+            # subprocess.check_output(['bash', self.cmd1])
+            try:
+                subprocess.check_output(['bash', self.cmd1])
+            except subprocess.CalledProcessError as e:
+                print(e.output)
             os.system('sleep 3')
             if os.path.exists('/tmp/emm.txt'):
                 msg.append(_("READ EMM....\n"))
@@ -497,8 +514,6 @@ class cccConfig(Screen, ConfigListScreen):
     def layoutFinished(self):
         self.showhide()
         self.setTitle(self.setup_title)
-        # payp = paypal()
-        # self["paypal"].setText(payp)
         self['description'].setText(_('Select Your Choice'))
 
     def createSetup(self):
