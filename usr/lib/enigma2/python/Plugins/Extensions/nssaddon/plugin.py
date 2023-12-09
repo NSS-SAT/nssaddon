@@ -220,7 +220,7 @@ AgentRequest = RequestAgent()
 global set
 config.plugins.nssaddon = ConfigSubsection()
 config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
-config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/media/hdd/picon/')
+config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
 config.plugins.nssaddon.strtmain = ConfigYesNo(default=True)
 config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
@@ -298,7 +298,6 @@ Panel_list = [
  _('PLUGIN MULTIBOOT'),
  _('PLUGIN MULTIMEDIA'),
  _('PLUGIN PICONS'),
- _('PLUGIN PPANEL'),
  _('PLUGIN SETTINGS PANEL'),
  _('PLUGIN SCRIPT'),
  _('PLUGIN SKINS'),
@@ -3053,6 +3052,33 @@ class MMarkPiconsf(Screen):
         if self.aborted:
             self.finish(aborted=True)
 
+def autostart(reason, session=None, **kwargs):
+    """called with reason=1 to during shutdown, with reason=0 at startup?"""
+    print("[Softcam] Started")
+    if reason == 0:
+        print('reason 0')
+        if session is not None:
+            print('session none')
+            try:
+                print('ok started autostart')
+                if fileExists('/etc/init.d/dccamd'):
+                    os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                if fileExists('/usr/bin/dccamd'):
+                    os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
+                os.system("ln -sf /usr/bin /var/bin")
+                os.system("ln -sf /usr/keys /var/keys")
+                os.system("ln -sf /usr/scce /var/scce")
+                # os.system("ln -sf /usr/camscript /var/camscript")
+                os.system("sleep 2")
+                os.system("/etc/startcam.sh &")
+                os.system('sleep 2')
+                print("*** running autostart ***")
+            except:
+                print('except autostart')
+        else:
+            print('pass autostart')
+    return
+
 
 def main(session, **kwargs):
     try:
@@ -3088,7 +3114,7 @@ def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
     result = [PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgmain),
-              # PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+              PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:
         result.append(extDescriptor)
