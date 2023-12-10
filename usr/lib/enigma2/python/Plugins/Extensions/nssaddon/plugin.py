@@ -858,10 +858,12 @@ class SettingVhan(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
+            global set
             global set
             set = 0
             if self.downloading is True:
@@ -970,10 +972,11 @@ class SettingVhan2(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1106,10 +1109,11 @@ class Milenka61(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1201,10 +1205,11 @@ class SettingManutek(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1310,10 +1315,11 @@ class SettingMorpheus(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1428,10 +1434,11 @@ class SettingCiefp(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1537,10 +1544,11 @@ class SettingBi58(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1635,10 +1643,11 @@ class SettingPredrag(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -1743,10 +1752,11 @@ class SettingCyrus(Screen):
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
             global set
             set = 0
             if self.downloading is True:
@@ -2769,10 +2779,11 @@ class SelectPiconz(Screen):
         else:
             return
 
-    def remove(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.remove, MessageBox, _('Do you want to remove all picons in folder?\n%s\nIt could take a few minutes, wait ..' % str(mmkpicon)), MessageBox.TYPE_YESNO)
-        else:
+    def remove(self):
+        self.session.openWithCallback(self.remove1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def remove1(self, answer):
+        if answer:
             self['info'].setText(_('Erase %s... please wait' % str(mmkpicon)))
             piconsx = glob.glob(str(mmkpicon) + '/*.png')
             for f in piconsx:
@@ -2986,10 +2997,11 @@ class MMarkPiconsf(Screen):
         except:
             self.downloading = False
 
-    def okRun(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okRun, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+    
+    def okRun1(self, answer):
+        if answer:
             if self.downloading is True:
                 idx = self["list"].getSelectionIndex()
                 self.name = self.names[idx]
