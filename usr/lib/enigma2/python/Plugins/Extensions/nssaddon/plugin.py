@@ -141,22 +141,17 @@ def checkMyFile(url):
 def make_req(url):
     try:
         import requests
-        link = requests.get(url, headers={'User-Agent': RequestAgent()}).text
+        response = requests.get(url, verify=False)
+        if response.status_code == 200:
+            link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=15, verify=False, stream=True ).text
         return link
     except ImportError:
         req = Request(url)
-        req.add_header('User-Agent', 'TVS')
-        response = urlopen(req, None, 7)
+        req.add_header('User-Agent', 'E2 Plugin NSSpanel')
+        response = urlopen(req, None, 10)
         link = response.read().decode('utf-8')
         response.close()
         return link
-    except:
-        e = URLError
-        if hasattr(e, 'code'):
-            print('We failed with error code - %s.' % e.code)
-        if hasattr(e, 'reason'):
-            print('Reason: ', e.reason)
-        return
     return
 
 
@@ -3194,8 +3189,8 @@ def StartSavingTerrestrialChannels():
             x = x.lower()
             if x.find('http'):
                 continue
-            if x.find('eeee0000') != -1:
-                if x.find('82000') == -1 and x.find('c0000') == -1:
+            if x.find('eeee') != -1:
+                # if x.find('82000') == -1 and x.find('c0000') == -1:
                     return file
                     break
 
@@ -3211,7 +3206,7 @@ def StartSavingTerrestrialChannels():
                 if x.lower().find((search.lower())) != -1:
                     if x.find('http'):
                         continue
-                    if x.find('eeee0000') != -1:
+                    if x.find('eeee') != -1:
                         return file
                         break
 
@@ -3236,7 +3231,7 @@ def StartSavingTerrestrialChannels():
                     inTransponder = False
                     inService = False
                 line = line.lower()
-                if line.find('eeee0000') != -1:
+                if line.find('eeee') != -1:
                     Trasponder = True
                     if inTransponder:
                         TrasponderListOldLamedb.write(line)
