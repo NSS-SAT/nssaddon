@@ -86,7 +86,6 @@ def ssl_urlopen(url):
 
 
 try:
-    from OpenSSL import SSL
     from twisted.internet import ssl
     from twisted.internet._sslverify import ClientTLSOptions
     sslverify = True
@@ -143,11 +142,11 @@ def make_req(url):
         import requests
         response = requests.get(url, verify=False)
         if response.status_code == 200:
-            link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=15, verify=False, stream=True ).text
+            link = requests.get(url, headers={'User-Agent': Utils.RequestAgent()}, timeout=15, verify=False, stream=True).text
         return link
     except ImportError:
         req = Request(url)
-        req.add_header('User-Agent', 'E2 Plugin NSSpanel')
+        req.add_header('User-Agent', 'E2 Plugin nss Panel')
         response = urlopen(req, None, 10)
         link = response.read().decode('utf-8')
         response.close()
@@ -239,6 +238,13 @@ plugin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
 ico_path = os.path.join(plugin_path, 'logo.png')
 no_cover = os.path.join(plugin_path, 'no_coverArt.png')
 _firstStarttvspro = True
+ee2ldb = '/etc/enigma2/lamedb'
+ServOldLamedb = plugin_path + '/temp/ServiceListOldLamedb'
+TransOldLamedb = plugin_path + '/temp/TrasponderListOldLamedb'
+TerChArch = plugin_path + '/temp/TerrestrialChannelListArchive'
+# SelBack = plugin_path + '/SelectBack'
+# SSelect = plugin_path + '/Select'
+DIGTV = 'eeee0000'
 
 screenwidth = getDesktop(0).size()
 if screenwidth.width() == 2560:
@@ -293,6 +299,7 @@ Panel_list = [
  _('PLUGIN MULTIBOOT'),
  _('PLUGIN MULTIMEDIA'),
  _('PLUGIN PICONS'),
+ _('PLUGIN PPANEL'),
  _('PLUGIN SETTINGS PANEL'),
  _('PLUGIN SCRIPT'),
  _('PLUGIN SKINS'),
@@ -319,7 +326,8 @@ Panel_list2 = [
 Panel_list3 = [
  _('MMARK PICONS BLACK'),
  _('MMARK PICONS TRANSPARENT'),
- _('MMARK PICONS MOVIE')]
+ _('MMARK PICONS MOVIE'),
+ _('OPEN PICONS')]
 
 
 class nssList(MenuList):
@@ -740,22 +748,25 @@ class NssDailySetting(Screen):
         else:
             return
 
-    def terrestrial_restore(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.terrestrial_restore, MessageBox, _("This operation restore your Favorite channel Dtt\nfrom =>>THISPLUGIN/temp/TerrestrialChannelListArchive\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
-        else:
+    def terrestrial_restore(self):
+        self.session.openWithCallback(self.terrestrial_restore2, MessageBox, _("This operation restore your Favorite channel Dtt\nfrom =>>THISPLUGIN/temp/TerrestrialChannelListArchive\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
+
+    def terrestrial_restore2(self, answer):
+        if answer:
             terrestrial_rest()
 
-    def terrestrialsave(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.terrestrialsave, MessageBox, _("This operation save your Favorite channel Dtt\nto =>>/tmp/*_enigma2settingsbackup.tar.gz\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
-        else:
+    def terrestrialsave(self):
+        self.session.openWithCallback(self.terrestrialsave2, MessageBox, _("This operation save your Favorite channel Dtt\nto =>>/tmp/*_enigma2settingsbackup.tar.gz\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
+
+    def terrestrialsave2(self, answer):
+        if answer:
             terrestrial()
 
-    def okSATELLITE(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okSATELLITE, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okSATELLITE(self):
+        self.session.openWithCallback(self.okSATELLITE2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okSATELLITE2(self, answer):
+        if answer:
             if Utils.checkInternet():
                 try:
                     url_sat_oealliance = 'http://raw.githubusercontent.com/oe-alliance/oe-alliance-tuxbox-common/master/src/satellites.xml'
@@ -772,10 +783,11 @@ class NssDailySetting(Screen):
             else:
                 self.session.open(MessageBox, "No Internet", MessageBox.TYPE_INFO)
 
-    def okTERRESTRIAL(self, answer=None):
-        if answer is None:
-            self.session.openWithCallback(self.okTERRESTRIAL, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-        else:
+    def okTERRESTRIAL(self):
+        self.session.openWithCallback(self.okTERRESTRIAL2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okTERRESTRIAL2(self, answer):
+        if answer:
             if Utils.checkInternet():
                 try:
                     url_sat_oealliance = 'https://raw.githubusercontent.com/oe-alliance/oe-alliance-tuxbox-common/master/src/terrestrial.xml'
@@ -841,7 +853,7 @@ class SettingVhan(Screen):
                 data = six.ensure_str(data)
             match = re.compile('<td><a href="(.+?)">(.+?)</a></td>.*?<td>(.+?)</td>', re.DOTALL).findall(data)
             for url, name, date in match:
-                name = name + ' ' + date
+                name = name.replace('&#127381;', '') + ' ' + date
                 url = "https://www.vhannibal.net/" + url
                 self.urls.append(Utils.checkStr(url.strip()))
                 self.names.append(Utils.checkStr(name.strip()))
@@ -858,7 +870,6 @@ class SettingVhan(Screen):
 
     def okRun1(self, answer):
         if answer:
-            global set
             global set
             set = 0
             if self.downloading is True:
@@ -955,7 +966,7 @@ class SettingVhan2(Screen):
                 if '.php' in url.lower():
                     continue
                 name = "Vhannibal" + url
-                name = name.replace(".zip", "").replace("%20", " ")
+                name = name.replace('&#127381;', '').replace("%20", " ")
                 url = "http://sat.alfa-tech.net/upload/settings/vhannibal/Vhannibal" + url + '.zip'
                 self.urls.append(Utils.checkStr(url.strip()))
                 self.names.append(Utils.checkStr(name.strip()))
@@ -1096,7 +1107,7 @@ class Milenka61(Screen):
                     url = "http://178.63.156.75/tarGz/Satvenus" + url
                     self.urls.append(Utils.checkStr(url.strip()))
                     self.names.append(Utils.checkStr(name.strip()))
-                    self.downloading = True
+                self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
             showlistNss(self.names, self['list'])
@@ -1901,7 +1912,8 @@ class NssInstall(Screen):
                     if 'wget' not in res.lower():
                         cmd23 = 'apt-get update && apt-get install wget'
                         os.popen(cmd23)
-                    cmd = 'dpkg -i %s' % down
+                    # cmd = 'dpkg -i %s' % down
+                    cmd = 'apt-get -f -y --force-yes install %s' % down
                     # cmd = 'dpkg --install --force-overwrite %s' % self.dest
                     # cmd = "wget -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     # if "https" in str(self.com):
@@ -2055,10 +2067,10 @@ class NssInstall(Screen):
                         return
 
                 if os.path.exists('/var/lib/dpkg/info'):
-                    self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
-                    self['info'].setText(_('Download canceled!'))
-                    return
-                else:
+                    # self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
+                    # self['info'].setText(_('Download canceled!'))
+                    # return
+                # else:
                     self.download = downloadWithProgress(self.com, self.dest)
                     self.download.addProgress(self.downloadProgress)
                     self.download.start().addCallback(self.install).addErrback(self.download_failed)
@@ -2240,7 +2252,7 @@ class NssIPK(Screen):
                     elif self.sel.endswith('.deb'):
                         if os.path.exists('/var/lib/dpkg/info'):
                             # apt-get install -f -y
-                            cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";apt-get install -f -y %s > /dev/null' % self.dest
+                            cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";apt-get -f -y --force-yes install %s > /dev/null' % self.dest
                             self.session.open(tvConsole, title='DEB Local Installation', cmdlist=[cmd0], closeOnSuccess=False)
                         else:
                             self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
@@ -2771,6 +2783,10 @@ class SelectPiconz(Screen):
             self.session.open(MMarkFolderz, host_trs)
         elif sel == ('MMARK PICONS MOVIE'):
             self.session.open(MMarkPiconsf, 'MMark-Picons', host_mov, True)
+        elif sel == ('OPEN PICONS'):  # https://openpicons.com/picons/full-motor-srp/hardlink/ # https://openpicons.com/picons/?dir=full-motor-srp/ipk
+            # return
+            host_open = 'https://openpicons.com/picons/?dir=full-motor-srp/hardlink'
+            self.session.open(OpenPicons, 'OpenPicons', host_open)
         else:
             return
 
@@ -2994,7 +3010,7 @@ class MMarkPiconsf(Screen):
 
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-    
+
     def okRun1(self, answer):
         if answer:
             if self.downloading is True:
@@ -3059,32 +3075,180 @@ class MMarkPiconsf(Screen):
         if self.aborted:
             self.finish(aborted=True)
 
-def autostart(reason, session=None, **kwargs):
-    """called with reason=1 to during shutdown, with reason=0 at startup?"""
-    print("[Softcam] Started")
-    if reason == 0:
-        print('reason 0')
-        if session is not None:
-            print('session none')
-            try:
-                print('ok started autostart')
-                if fileExists('/etc/init.d/dccamd'):
-                    os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                if fileExists('/usr/bin/dccamd'):
-                    os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
-                os.system("ln -sf /usr/bin /var/bin")
-                os.system("ln -sf /usr/keys /var/keys")
-                os.system("ln -sf /usr/scce /var/scce")
-                # os.system("ln -sf /usr/camscript /var/camscript")
-                os.system("sleep 2")
-                os.system("/etc/startcam.sh &")
-                os.system('sleep 2')
-                print("*** running autostart ***")
-            except:
-                print('except autostart')
+
+class OpenPicons(Screen):
+    def __init__(self, session, name, url):
+        self.session = session
+        skin = os.path.join(skin_path, 'tvall.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('OpenPicons')
+        Screen.__init__(self, session)
+        self.setTitle(_(title_plug))
+        self.list = []
+        self['list'] = nssList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['pth'] = Label('')
+        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
+        self['pform'] = Label('')
+        self['progress'] = ProgressBar()
+        self["progress"].hide()
+        self['progresstext'] = StaticText()
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button('')
+        self["key_blue"] = Button('')
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.getfreespace()
+        self.downloading = False
+        self.url = url
+        self.name = name
+        self.error_message = ""
+        self.last_recvbytes = 0
+        self.error_message = None
+        self.download = None
+        self.aborted = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
-            print('pass autostart')
-    return
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(_(title_plug))
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.getfreespace)
+
+    def getfreespace(self):
+        try:
+            # from Components.PluginComponent import plugins
+            # plugins.clearPluginList()
+            # plugins.readPluginList(resolveFilename(SCOPE_PLUGINS))
+            fspace = Utils.freespace()
+            self['pform'].setText(str(fspace))
+        except Exception as e:
+            print(e)
+
+    def downxmlpage(self):
+        # url = six.ensure_binary(self.url)
+        # url = make_req(self.url)
+        try:
+            data = make_req(self.url)
+            if PY3:
+                data = six.ensure_str(data)
+            self._gotPageLoad(data)
+        except Exception as e:
+            print('no link valid: ', e)
+        # getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
+        # https://openpicons.com/picons/?dir=full-motor-srp
+
+    def errorLoad(self):
+        self['info'].setText(_('Try again later ...'))
+        self.downloading = False
+
+    def _gotPageLoad(self, data):
+        r = data
+        if PY3:
+            r = six.ensure_str(data)
+        print('rrrrrrrrrrrrrrr=:', r)
+        self.names = []
+        self.urls = []
+        try:
+            regex = 'full-motor-srp/hardlink/(.*?).tar.xz"'
+            match = re.compile(regex, re.DOTALL).findall(r)
+            for url in match:
+                # full-motor-srp/hardlink/srp-full.100x60-86x46.dark.on.blue_2023-12-12--23-58-23.hardlink.tar.xz"
+                name = url.replace('.hardlink', '').replace('.', '-').replace('_', '-')
+                url = 'https://openpicons.com/picons/full-motor-srp/hardlink/' + url + '.tar.xz'
+                print('name=', name)
+                print('url:', url)
+                self.urls.append(url)
+                self.names.append(Utils.checkStr(name))
+            self['info'].setText(_('Please select ...'))
+            self['key_green'].show()
+            showlistNss(self.names, self['list'])
+            self.downloading = True
+        except:
+            self.downloading = False
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
+            if self.downloading is True:
+                idx = self["list"].getSelectionIndex()
+                self.name = self.names[idx]
+                url = self.urls[idx]
+                self.dest = "/tmp/download.tar.xz"
+                if os.path.exists(self.dest):
+                    os.remove(self.dest)
+                self.download = downloadWithProgress(url, self.dest)
+                self.download.addProgress(self.downloadProgress)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+            else:
+                self['info'].setText(_('Picons Not Installed ...'))
+
+    def downloadProgress(self, recvbytes, totalbytes):
+        self['info'].setText(_('Download in progress...'))
+        self["progress"].show()
+        self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
+        self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
+        self.last_recvbytes = recvbytes
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('File Downloaded ...'))
+            if os.path.exists(self.dest):
+                self.namel = ''
+                self['info'].setText(_('Install ...'))
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                self['info'].setText(_('Please select ...'))
+                if os.path.exists("/tmp/unzipped"):
+                    os.system('rm -rf /tmp/unzipped')
+                os.makedirs('/tmp/unzipped')
+                os.system('tar -xzvf ' + self.dest + ' -C /tmp/unzipped/')
+                path = '/tmp/unzipped'
+                for root, dirs, files in os.walk(path):
+                    for name in dirs:
+                        self.namel = name
+                # os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + str(mmkpicon))
+                myCmd = "cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + str(mmkpicon)
+                self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[myCmd, 'sleep 5'], closeOnSuccess=False)
+                # subprocess.Popen(myCmd, shell=True, executable='/bin/bash')
+                info = 'Successfully Picons Installed'
+                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+    def download_failed(self, failure_instance=None, error_message=""):
+        self.error_message = error_message
+        if error_message == "" and failure_instance is not None:
+            self.error_message = failure_instance.getErrorMessage()
+        self.downloading = False
+        info = 'Download Failed!!! ' + self.error_message
+        self['info2'].setText(info)
+        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+    def abort(self):
+        print("aborting", self.url)
+        if self.download:
+            self.download.stop()
+        self.downloading = False
+        self.aborted = True
+
+    def download_finished(self, string=""):
+        if self.aborted:
+            self.finish(aborted=True)
 
 
 def main(session, **kwargs):
@@ -3121,7 +3285,7 @@ def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
     result = [PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgmain),
-              PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+              # PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:
         result.append(extDescriptor)
@@ -3137,7 +3301,6 @@ def terrestrial():
     ttime = time.localtime(now)
     tt = str('{0:02d}'.format(ttime[2])) + str('{0:02d}'.format(ttime[1])) + str(ttime[0])[2:] + '_' + str('{0:02d}'.format(ttime[3])) + str('{0:02d}'.format(ttime[4])) + str('{0:02d}'.format(ttime[5]))
     os.system('tar -czvf /tmp/' + tt + '_enigma2settingsbackup.tar.gz' + ' -C / /etc/enigma2/*.tv /etc/enigma2/*.radio /etc/enigma2/lamedb')
-
     if SavingProcessTerrestrialChannels:
         print('SavingProcessTerrestrialChannels')
     return
@@ -3146,7 +3309,8 @@ def terrestrial():
 def terrestrial_rest():
     if LamedbRestore():
         TransferBouquetTerrestrialFinal()
-        terrr = os.path.join(plugin_path, '/temp/TerrestrialChannelListArchive')
+        # terrr = os.path.join(plugin_path, 'temp/TerrestrialChannelListArchive')
+        terrr = plugin_path + '/temp/TerrestrialChannelListArchive'
         if os.path.exists(terrr):
             os.system("cp -rf " + plugin_path + "/temp/TerrestrialChannelListArchive /etc/enigma2/userbouquet.terrestrial.tv")
         os.system('cp -rf /etc/enigma2/bouquets.tv /etc/enigma2/backup_bouquets.tv')
@@ -3180,44 +3344,40 @@ def lcnstart():
 
 
 def StartSavingTerrestrialChannels():
+
     def ForceSearchBouquetTerrestrial():
         for file in sorted(glob.glob("/etc/enigma2/*.tv")):
-            if 'tivustream' in file:
-                continue
             f = open(file, "r").read()
-            x = f.strip()
-            x = x.lower()
-            if x.find('http'):
-                continue
-            if x.find('eeee') != -1:
-                # if x.find('82000') == -1 and x.find('c0000') == -1:
-                    return file
-                    break
+            x = f.strip().lower()
+            if x.find(DIGTV[:4]) != -1:
+                return file
+                break
+            # if x.find('eeee0000') != -1:
+                # if x.find('82000') == -1 or x.find('c0000') == -1:
+                    # return file
+                    # break
+        return
 
     def ResearchBouquetTerrestrial(search):
         for file in sorted(glob.glob("/etc/enigma2/*.tv")):
-            if 'tivustream' in file:
-                continue
             f = open(file, "r").read()
-            x = f.strip()
-            x = x.lower()
+            x = f.strip().lower()
             x1 = f.strip()
             if x1.find("#NAME") != -1:
-                if x.lower().find((search.lower())) != -1:
-                    if x.find('http'):
-                        continue
-                    if x.find('eeee') != -1:
+                if x.lower().find(search.lower()) != -1:
+                    if x.find(DIGTV[:4]) != -1:
                         return file
                         break
+        return
 
     def SaveTrasponderService():
-        TrasponderListOldLamedb = open(plugin_path + '/temp/TrasponderListOldLamedb', 'w')
-        ServiceListOldLamedb = open(plugin_path + '/temp/ServiceListOldLamedb', 'w')
+        TrasponderListOldLamedb = open(TransOldLamedb, 'w')
+        ServiceListOldLamedb = open(ServOldLamedb, 'w')
         Trasponder = False
         inTransponder = False
         inService = False
         try:
-            LamedbFile = open('/etc/enigma2/lamedb')
+            LamedbFile = open(ee2ldb, 'r')
             while 1:
                 line = LamedbFile.readline()
                 if not line:
@@ -3231,7 +3391,7 @@ def StartSavingTerrestrialChannels():
                     inTransponder = False
                     inService = False
                 line = line.lower()
-                if line.find('eeee') != -1:
+                if line.find(DIGTV[:4]) != -1:
                     Trasponder = True
                     if inTransponder:
                         TrasponderListOldLamedb.write(line)
@@ -3249,18 +3409,18 @@ def StartSavingTerrestrialChannels():
             TrasponderListOldLamedb.close()
             ServiceListOldLamedb.close()
             if not Trasponder:
-                os.system('rm -fr ' + plugin_path + '/temp/TrasponderListOldLamedb')
-                os.system('rm -fr ' + plugin_path + '/temp/ServiceListOldLamedb')
-        except Exception as e:
-            print('error: ', str(e))
+                os.system('rm -fr ' + TransOldLamedb)
+                os.system('rm -fr ' + ServOldLamedb)
+        except:
+            pass
         return Trasponder
 
     def CreateBouquetForce():
-        WritingBouquetTemporary = open(plugin_path + '/temp/TerrestrialChannelListArchive', 'w')
-        WritingBouquetTemporary.write('#NAME Digitale Terrestre\n')
-        ReadingTempServicelist = open(plugin_path + '/temp/ServiceListOldLamedb').readlines()
+        WritingBouquetTemporary = open(TerChArch, 'w')
+        WritingBouquetTemporary.write('#NAME terrestre\n')
+        ReadingTempServicelist = open(ServOldLamedb, 'r').readlines()
         for jx in ReadingTempServicelist:
-            if jx.find('eeee') != -1:
+            if jx.find(DIGTV[:4]) != -1:
                 String = jx.split(':')
                 WritingBouquetTemporary.write('#SERVICE 1:0:%s:%s:%s:%s:%s:0:0:0:\n' % (hex(int(String[4]))[2:], String[0], String[2], String[3], String[1]))
         WritingBouquetTemporary.close()
@@ -3270,16 +3430,17 @@ def StartSavingTerrestrialChannels():
         if not NameDirectory:
             NameDirectory = ForceSearchBouquetTerrestrial()
         try:
-            shutil.copyfile(NameDirectory, plugin_path + '/temp/TerrestrialChannelListArchive')
+            shutil.copyfile(NameDirectory, TerChArch)
             return True
-        except Exception as e:
-            print('error: ', str(e))
+        except:
+            pass
         return
     Service = SaveTrasponderService()
     if Service:
         if not SaveBouquetTerrestrial():
             CreateBouquetForce()
         return True
+    return
 
 
 def LamedbRestore():
@@ -3288,7 +3449,7 @@ def LamedbRestore():
         ServiceListNewLamedb = open(plugin_path + '/temp/ServiceListNewLamedb', 'w')
         inTransponder = False
         inService = False
-        infile = open("/etc/enigma2/lamedb")
+        infile = open(ee2ldb, 'r')
         while 1:
             line = infile.readline()
             if not line:
@@ -3307,23 +3468,23 @@ def LamedbRestore():
                 ServiceListNewLamedb.write(line)
         TrasponderListNewLamedb.close()
         ServiceListNewLamedb.close()
-        WritingLamedbFinal = open("/etc/enigma2/lamedb", "w")
+        WritingLamedbFinal = open(ee2ldb, "w")
         WritingLamedbFinal.write("eDVB services /4/\n")
-        TrasponderListNewLamedb = open(plugin_path + '/temp/TrasponderListNewLamedb').readlines()
+        TrasponderListNewLamedb = open(plugin_path + '/temp/TrasponderListNewLamedb', 'r').readlines()
         for x in TrasponderListNewLamedb:
             WritingLamedbFinal.write(x)
         try:
-            TrasponderListOldLamedb = open(plugin_path + '/temp/TrasponderListOldLamedb').readlines()
+            TrasponderListOldLamedb = open(TransOldLamedb, 'r').readlines()
             for x in TrasponderListOldLamedb:
                 WritingLamedbFinal.write(x)
         except:
             pass
         WritingLamedbFinal.write("end\n")
-        ServiceListNewLamedb = open(plugin_path + '/temp/ServiceListNewLamedb').readlines()
+        ServiceListNewLamedb = open(plugin_path + '/temp/ServiceListNewLamedb', 'r').readlines()
         for x in ServiceListNewLamedb:
             WritingLamedbFinal.write(x)
         try:
-            ServiceListOldLamedb = open(plugin_path + '/temp/ServiceListOldLamedb').readlines()
+            ServiceListOldLamedb = open(ServOldLamedb, 'r').readlines()
             for x in ServiceListOldLamedb:
                 WritingLamedbFinal.write(x)
         except:
@@ -3336,15 +3497,18 @@ def LamedbRestore():
 
 
 def TransferBouquetTerrestrialFinal():
+
     def RestoreTerrestrial():
         for file in os.listdir("/etc/enigma2/"):
             if re.search('^userbouquet.*.tv', file):
                 f = open("/etc/enigma2/" + file, "r")
                 x = f.read()
-                if re.search("#NAME Digitale Terrestre", x, flags=re.IGNORECASE):
+                if re.search('#NAME Digitale Terrestre', x, flags=re.IGNORECASE) or re.search('#NAME DTT', x, flags=re.IGNORECASE):  # for disa51
                     return "/etc/enigma2/" + file
+        return
+
     try:
-        TerrestrialChannelListArchive = open(plugin_path + '/temp/TerrestrialChannelListArchive').readlines()
+        TerrestrialChannelListArchive = open(TerChArch, 'r').readlines()
         DirectoryUserBouquetTerrestrial = RestoreTerrestrial()
         if DirectoryUserBouquetTerrestrial:
             TrasfBouq = open(DirectoryUserBouquetTerrestrial, 'w')
@@ -3353,8 +3517,8 @@ def TransferBouquetTerrestrialFinal():
                     TrasfBouq.write('#NAME Digitale Terrestre\n')
                 else:
                     TrasfBouq.write(Line)
-        TrasfBouq.close()
-        return True
+            TrasfBouq.close()
+            return True
     except:
         return False
-# ===== by lululla
+    return
