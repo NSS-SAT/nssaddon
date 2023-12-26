@@ -3275,6 +3275,109 @@ class OpenPicons(Screen):
             self.finish(aborted=True)
 
 
+def autostart(reason, session=None, **kwargs):
+    """called with reason=1 to during shutdown, with reason=0 at startup?"""
+    print("[Softcam] Started")
+    if reason == 0:
+        print('reason 0')
+        if session is not None:
+            print('session none')
+            try:
+                print('ok started autostart')
+                if fileExists('/etc/init.d/dccamd'):
+                    os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                if fileExists('/usr/bin/dccamd'):
+                    os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
+                os.system("ln -sf /usr/bin /var/bin")
+                os.system("ln -sf /usr/keys /var/keys")
+                os.system("ln -sf /usr/scce /var/scce")
+                # os.system("ln -sf /usr/camscript /var/camscript")
+                os.system("sleep 2")
+                os.system("/etc/startcam.sh &")
+                os.system('sleep 2')
+                print("*** running autostart ***")
+            except:
+                print('except autostart')
+        else:
+            print('pass autostart')
+    return
+
+
+# class DreamCCAuto:
+    # def __init__(self):
+        # self.readCurrent()
+
+    # def readCurrent(self):
+        # current = None
+        # self.FilCurr = ''
+        # if fileExists('/etc/CurrentBhCamName'):
+            # self.FilCurr = '/etc/CurrentBhCamName'
+        # else:
+            # self.FilCurr = '/etc/clist.list'
+        # try:
+            # if sys.version_info[0] == 3:
+                # clist = open(self.FilCurr, 'r', encoding='UTF-8')
+            # else:
+                # clist = open(self.FilCurr, 'r')
+        # except:
+            # return
+
+        # if clist is not None:
+            # for line in clist:
+                # current = line
+            # clist.close()
+        # scriptliste = []
+        # path = '/usr/camscript/'
+        # for root, dirs, files in os.walk(path):
+            # for name in files:
+                # scriptliste.append(name)
+
+        # for lines in scriptliste:
+            # dat = path + lines
+            # datei = open(dat, 'r')
+            # for line in datei:
+                # if line[0:3] == 'OSD':
+                    # nam = line[5:len(line) - 2]
+                    # if current == nam:
+                        # if fileExists('/etc/init.d/dccamd'):
+                            # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                        # os.system('ln -sf /usr/bin /var/bin')
+                        # os.system('ln -sf /usr/keys /var/keys')
+                        # os.system('ln -sf /usr/scce /var/scce')
+                        # os.system('ln -sf /usr/script /var/script')
+                        # os.system("/etc/startcam.sh &")
+                        # os.system('sleep 2')
+                        # print("*** running autostart ***")
+                        # # os.system(dat + ' cam_startup &')
+                        # # os.system('sleep 2')
+
+            # datei.close()
+        # else:
+            # print('pass autostart')
+
+        # return
+
+
+# def autostartsoftcam(reason, session=None, **kwargs):
+    # """called with reason=1 to during shutdown, with reason=0 at startup?"""
+    # print("[Softcam] Started")
+    # global DreamCC_auto
+    # # global autoStartTimertvsman
+    # # global _firstStarttvsman
+    # if reason == 0:
+        # print('reason 0')
+        # if session is not None:
+            # try:
+                # if fileExists('/etc/init.d/dccamd'):
+                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                # DreamCC_auto = DreamCCAuto()
+            # except:
+                # pass
+            # print("*** running autostart ***")
+            # _firstStarttvsman = True
+            # # autoStartTimertvsman = AutoStartTimertvman(session)
+
+
 def main(session, **kwargs):
     try:
         session.open(HomeNss)
@@ -3309,7 +3412,7 @@ def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
     result = [PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgmain),
-              # PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+              PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:
         result.append(extDescriptor)
