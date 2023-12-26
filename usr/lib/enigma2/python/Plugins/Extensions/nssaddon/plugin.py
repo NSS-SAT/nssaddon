@@ -105,6 +105,25 @@ if sslverify:
             return ctx
 
 
+def status_site():
+    global status
+    import requests
+    try:
+        Host = 'https://www.nonsolosat.net'
+        # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
+        response = requests.get(Host, verify=False)
+        if response.status_code == 200:
+            status = True
+            print('Web site exists')
+        else:
+            status = False
+            print('Web site does not exist')
+    except Exception as e:
+        print(e)
+        status = False
+    return status
+
+
 def checkMyFile(url):
     return []
     myfile = None
@@ -244,7 +263,7 @@ TransOldLamedb = plugin_path + '/temp/TrasponderListOldLamedb'
 TerChArch = plugin_path + '/temp/TerrestrialChannelListArchive'
 # SelBack = plugin_path + '/SelectBack'
 # SSelect = plugin_path + '/Select'
-DIGTV = 'eeee0000'
+# DIGTV = 'eeee0000'
 
 screenwidth = getDesktop(0).size()
 if screenwidth.width() == 2560:
@@ -264,25 +283,6 @@ if not os.path.exists(mmkpicon):
         os.makedirs(mmkpicon)
     except OSError as e:
         print(('Error creating directory %s:\n%s') % (mmkpicon, str(e)))
-
-
-def status_site():
-    global status
-    import requests
-    try:
-        Host = 'https://www.nonsolosat.net'
-        # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
-        response = requests.get(Host, verify=False)
-        if response.status_code == 200:
-            status = True
-            print('Web site exists')
-        else:
-            status = False
-            print('Web site does not exist')
-    except Exception as e:
-        print(e)
-        status = False
-    return status
 
 
 Panel_list = [
@@ -347,11 +347,16 @@ class nssList(MenuList):
             self.l.setFont(0, gFont('Regular', textfont))
 
 
+pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/settingoff.png".format('nssaddon'))  # ico1_path
+if status_site():
+    pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/settingon.png".format('nssaddon'))  # ico1_path
+
+
 def nssListEntry(name, idx):
     res = [name]
-    pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/setting.png".format('nssaddon'))  # ico1_path
+    # pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/setting.png".format('nssaddon'))  # ico1_path
     if screenwidth.width() == 2560:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 15), size=(40, 40), png=loadPNG(pngs)))
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
@@ -364,15 +369,15 @@ def nssListEntry(name, idx):
 
 def oneListEntry(name):
     res = [name]
-    pngx = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/plugins.png".format('nssaddon'))  # ico1_path
+    # pngx = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/plugins.png".format('nssaddon'))  # ico1_path
     if screenwidth.width() == 2560:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 15), size=(40, 40), png=loadPNG(pngx)))
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 60), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngx)))
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     else:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 10), size=(40, 40), png=loadPNG(pngx)))
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 10), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(50, 0), size=(500, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
@@ -996,8 +1001,8 @@ class SettingVhan2(Screen):
                         set = 1
                         terrestrial()
 
-                    if PY3:
-                        url = six.ensure_binary(url)
+                    # if PY3:
+                        # url = six.ensure_binary(url)
                     if url.startswith(b"https") and sslverify:
                         parsed_uri = urlparse(url)
                         domain = parsed_uri.hostname
@@ -1334,7 +1339,6 @@ class SettingMorpheus(Screen):
                 dest = "/tmp/settings.zip"
                 self.namel = ''
                 if 'dtt' not in url.lower():
-                    # if not os.path.exists('/var/lib/dpkg/status'):
                     set = 1
                     terrestrial()
                 import requests
@@ -1890,7 +1894,7 @@ class NssInstall(Screen):
             if extension in ["gz", "bz2"] and tar == "tar":
                 self.command = ['']
                 if extension == "gz":
-                    self.command = ["tar -xzvf " + down + " -C /"]
+                    self.command = ["tar -xvf " + down + " -C /"]
                 elif extension == "bz2":
                     self.command = ["tar -xjvf " + down + " -C /"]
 
@@ -2031,13 +2035,16 @@ class NssInstall(Screen):
             idx = self["list"].getSelectionIndex()
             self.dom = self.names[idx]
             self.com = self.urls[idx]
-            # n2 = self.com.rfind("/", 0)
+            print('1 self.com type=', type(self.com))
+            # self.com = six.ensure_binary(self.com)
+            # print('2 self.com type=', type(self.com))
+            # if PY3:
+                # self.com = self.com.encode()
             self.downplug = self.com.split("/")[-1]
             self.dest = '/tmp/' + self.downplug
             if os.path.exists(self.dest):
                 os.remove(self.dest)
             if self.com is not None:
-
                 extensionlist = self.com.split('.')
                 extension = extensionlist[-1].lower()
                 if len(extensionlist) > 1:
@@ -2045,7 +2052,7 @@ class NssInstall(Screen):
                 if extension in ["gz", "bz2"] and tar == "tar":
                     self.command = ['']
                     if extension == "gz":
-                        self.command = ["tar -xzvf " + self.dest + " -C /"]
+                        self.command = ["tar -xvf " + self.dest + " -C /"]
                     elif extension == "bz2":
                         self.command = ["tar -xjvf " + self.dest + " -C /"]
                     self.timer = eTimer()
@@ -2067,10 +2074,10 @@ class NssInstall(Screen):
                         return
 
                 if os.path.exists('/var/lib/dpkg/info'):
-                    # self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
-                    # self['info'].setText(_('Download canceled!'))
-                    # return
-                # else:
+                    self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
+                    self['info'].setText(_('Download canceled!'))
+                    return
+                else:
                     self.download = downloadWithProgress(self.com, self.dest)
                     self.download.addProgress(self.downloadProgress)
                     self.download.start().addCallback(self.install).addErrback(self.download_failed)
@@ -2247,7 +2254,7 @@ class NssIPK(Screen):
                         cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";opkg install --force-reinstall ' + self.dest + ' > /dev/null'
                         self.session.open(tvConsole, title='IPK Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
                     elif self.sel.endswith('.tar.gz'):
-                        cmd0 = 'tar -xzvf ' + self.dest + ' -C /'
+                        cmd0 = 'tar -xvf ' + self.dest + ' -C /'
                         self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
                     elif self.sel.endswith('.deb'):
                         if os.path.exists('/var/lib/dpkg/info'):
@@ -2445,7 +2452,6 @@ class NssRemove(Screen):
                 except:
                     self.session.open(tvConsole, _('Removing: %s') % dom, ['opkg remove --force-removal-of-dependent-packages %s' % com], closeOnSuccess=True)
             self.close()
-        # self.getfreespace()
 
     def getfreespace(self):
         try:
@@ -3017,6 +3023,11 @@ class MMarkPiconsf(Screen):
                 idx = self["list"].getSelectionIndex()
                 self.name = self.names[idx]
                 url = self.urls[idx]
+                print('1 self.com type=', type(url))
+                # url = six.ensure_binary(url)
+                # print('2 self.com type=', type(url))
+                # if PY3:
+                    # url = url.encode()
                 dest = "/tmp/download.zip"
                 if os.path.exists(dest):
                     os.remove(dest)
@@ -3024,6 +3035,8 @@ class MMarkPiconsf(Screen):
                 regexcat = 'href="https://download(.*?)"'
                 match = re.compile(regexcat, re.DOTALL).findall(myfile)
                 url = 'https://download' + str(match[0])
+                print('url:', url)
+                print('dest:', dest)
                 self.download = downloadWithProgress(url, dest)
                 self.download.addProgress(self.downloadProgress)
                 self.download.start().addCallback(self.install).addErrback(self.download_failed)
@@ -3185,6 +3198,12 @@ class OpenPicons(Screen):
                 idx = self["list"].getSelectionIndex()
                 self.name = self.names[idx]
                 url = self.urls[idx]
+                print('1 url type=', type(url))
+                # url = six.ensure_binary(url)
+                # print('2 url type=', type(url))
+                # if PY3:
+                    # url = url.encode()
+
                 self.dest = "/tmp/download.tar.xz"
                 if os.path.exists(self.dest):
                     os.remove(self.dest)
@@ -3218,15 +3237,20 @@ class OpenPicons(Screen):
                 if os.path.exists("/tmp/unzipped"):
                     os.system('rm -rf /tmp/unzipped')
                 os.makedirs('/tmp/unzipped')
-                os.system('tar -xzvf ' + self.dest + ' -C /tmp/unzipped/')
+                os.system('tar -xvf ' + self.dest + ' -C /tmp/unzipped')
                 path = '/tmp/unzipped'
                 for root, dirs, files in os.walk(path):
                     for name in dirs:
+                        if not os.path.isdir(os.path.join(path, name)):
+                            continue                         
                         self.namel = name
-                # os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + str(mmkpicon))
-                myCmd = "cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + str(mmkpicon)
-                self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[myCmd, 'sleep 5'], closeOnSuccess=False)
-                # subprocess.Popen(myCmd, shell=True, executable='/bin/bash')
+                # folder is long name.. truk for this 
+                path2 = '/tmp/unzipped/' + str(self.namel)
+                for root, dirs, files in os.walk(path2):
+                    for name in files:
+                        Cmd = "cp -rf  '" + path2 + "/" + name + "' " + str(mmkpicon)
+                        os.system(Cmd)
+                                                                             
                 info = 'Successfully Picons Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
@@ -3349,7 +3373,7 @@ def StartSavingTerrestrialChannels():
         for file in sorted(glob.glob("/etc/enigma2/*.tv")):
             f = open(file, "r").read()
             x = f.strip().lower()
-            if x.find(DIGTV[:4]) != -1:
+            if x.find('eeee') != -1:
                 return file
                 break
             # if x.find('eeee0000') != -1:
@@ -3365,7 +3389,7 @@ def StartSavingTerrestrialChannels():
             x1 = f.strip()
             if x1.find("#NAME") != -1:
                 if x.lower().find(search.lower()) != -1:
-                    if x.find(DIGTV[:4]) != -1:
+                    if x.find('eeee') != -1:
                         return file
                         break
         return
@@ -3391,7 +3415,7 @@ def StartSavingTerrestrialChannels():
                     inTransponder = False
                     inService = False
                 line = line.lower()
-                if line.find(DIGTV[:4]) != -1:
+                if line.find('eeee') != -1:
                     Trasponder = True
                     if inTransponder:
                         TrasponderListOldLamedb.write(line)
@@ -3420,7 +3444,7 @@ def StartSavingTerrestrialChannels():
         WritingBouquetTemporary.write('#NAME terrestre\n')
         ReadingTempServicelist = open(ServOldLamedb, 'r').readlines()
         for jx in ReadingTempServicelist:
-            if jx.find(DIGTV[:4]) != -1:
+            if jx.find('eeee') != -1:
                 String = jx.split(':')
                 WritingBouquetTemporary.write('#SERVICE 1:0:%s:%s:%s:%s:%s:0:0:0:\n' % (hex(int(String[4]))[2:], String[0], String[2], String[3], String[1]))
         WritingBouquetTemporary.close()
