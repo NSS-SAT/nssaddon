@@ -220,7 +220,7 @@ AgentRequest = RequestAgent()
 global set
 config.plugins.nssaddon = ConfigSubsection()
 config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
-config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/media/hdd/picon/')
+config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
 config.plugins.nssaddon.strtmain = ConfigYesNo(default=True)
 config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
