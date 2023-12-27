@@ -32,8 +32,8 @@ def DreamCCExtra(name, index, isActive=False):
     res.append((eListboxPythonMultiContent.TYPE_TEXT,
                 90,
                 6,
-                400,
-                40,
+                300,
+                35,
                 0,
                 RT_HALIGN_LEFT | RT_VALIGN_CENTER,
                 name))
@@ -54,7 +54,7 @@ class DCCMenu(MenuList):
 
     def __init__(self, list, selection=0, enableWrapAround=True):
         MenuList.__init__(self, list, enableWrapAround, eListboxPythonMultiContent)
-        self.l.setFont(0, gFont('Regular', 40))
+        self.l.setFont(0, gFont('Regular', 35))
         self.l.setItemHeight(50)
         self.selection = selection
 
