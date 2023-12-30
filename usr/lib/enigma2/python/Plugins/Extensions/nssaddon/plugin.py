@@ -8,6 +8,9 @@
 # imported from tvAddon Panel
 from __future__ import print_function
 from . import _
+from .lib import Utils
+from .lib.Utils import RequestAgent
+from .lib.Lcn import LCN
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
@@ -49,9 +52,7 @@ import ssl
 import glob
 import six
 import subprocess
-from .lib import Utils
-from .lib.Utils import RequestAgent
-from .lib.Lcn import LCN
+
 
 global skin_path, mmkpicon, set, category
 
@@ -72,7 +73,6 @@ else:
 
 if sys.version_info >= (2, 7, 9):
     try:
-        import ssl
         sslContext = ssl._create_unverified_context()
     except:
         sslContext = None
@@ -3017,29 +3017,36 @@ class MMarkPiconsf(Screen):
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okRun1(self, answer):
-        if answer:
+    def okRun1(self, result):
+        self['info'].setText(_('... please wait'))
+        if result:
             if self.downloading is True:
                 idx = self["list"].getSelectionIndex()
                 self.name = self.names[idx]
                 url = self.urls[idx]
-                print('1 self.com type=', type(url))
-                # url = six.ensure_binary(url)
-                # print('2 self.com type=', type(url))
-                # if PY3:
-                    # url = url.encode()
                 dest = "/tmp/download.zip"
+                print('url333: ', url)
                 if os.path.exists(dest):
                     os.remove(dest)
-                myfile = Utils.ReadUrl(url)
-                regexcat = 'href="https://download(.*?)"'
-                match = re.compile(regexcat, re.DOTALL).findall(myfile)
-                url = 'https://download' + str(match[0])
-                print('url:', url)
-                print('dest:', dest)
-                self.download = downloadWithProgress(url, dest)
-                self.download.addProgress(self.downloadProgress)
-                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+                try:
+                    myfile = Utils.ReadUrl(url)
+                    print('response: ', myfile)
+                    regexcat = 'href="https://download(.*?)"'
+                    match = re.compile(regexcat, re.DOTALL).findall(myfile)
+                    print("match =", match[0])
+                    # myfile = checkMyFile(url)
+                    # print('myfile222:  ', myfile)
+                    url = 'https://download' + str(match[0])
+                    print("url final =", url)
+                    # myfile = checkMyFile(url)
+                    # print('myfile222:  ', myfile)
+                    # # url =  'https://download' + str(myfile)
+                    self.download = downloadWithProgress(url, dest)
+                    self.download.addProgress(self.downloadProgress)
+                    self.download.start().addCallback(self.install).addErrback(self.showError)
+                except Exception as e:
+                    print('error: ', str(e))
+                    print("Error: can't find file or read data")
             else:
                 self['info'].setText(_('Picons Not Installed ...'))
 
@@ -3242,15 +3249,15 @@ class OpenPicons(Screen):
                 for root, dirs, files in os.walk(path):
                     for name in dirs:
                         if not os.path.isdir(os.path.join(path, name)):
-                            continue                         
+                            continue
                         self.namel = name
-                # folder is long name.. truk for this 
+                # folder is long name.. truk for this
                 path2 = '/tmp/unzipped/' + str(self.namel)
                 for root, dirs, files in os.walk(path2):
                     for name in files:
                         Cmd = "cp -rf  '" + path2 + "/" + name + "' " + str(mmkpicon)
                         os.system(Cmd)
-                                                                             
+
                 info = 'Successfully Picons Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
@@ -3297,7 +3304,7 @@ def autostart(reason, session=None, **kwargs):
                 os.system('sleep 2')
                 print("*** running autostart ***")
             except:
-                    
+
                 print('except autostart')
         else:
             print('pass autostart')
