@@ -369,7 +369,6 @@ def nssListEntry(name, idx):
 
 def oneListEntry(name):
     res = [name]
-    # pngx = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/plugins.png".format('nssaddon'))  # ico1_path
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 60), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -1904,7 +1903,7 @@ class NssInstall(Screen):
 
                 self.session.open(tvConsole, title='Installation %s' % self.dom, cmdlist=[cmd, 'sleep 5'])  # , finishedCallback=self.msgipkinst)
                 self['info'].setText(_('Installation done !!!'))
-                return
+                # return
 
             elif extension == "deb":
                 if not os.path.exists('/var/lib/dpkg/status'):
@@ -1924,7 +1923,7 @@ class NssInstall(Screen):
                         # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    return
+                    # return
             elif extension == "ipk":
                 if os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
@@ -1936,7 +1935,7 @@ class NssInstall(Screen):
                         # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    return
+                    # return
             elif self.com.endswith('.zip'):
                 if 'setting' in self.dom.lower():
                     if not os.path.exists('/var/lib/dpkg/status'):
@@ -1973,7 +1972,7 @@ class NssInstall(Screen):
                     terrestrial_rest()
                     self.session.open(tvConsole, _('SETTING - install: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    return
+                    # return
                 elif 'picon' in self.dom.lower():
                     cmd = ["unzip -o -q %s -d %s > /dev/null" % (down, str(mmkpicon))]
                     # cmd = ["wget -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
@@ -1981,7 +1980,7 @@ class NssInstall(Screen):
                         # cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    return
+                    # return
                 else:
                     self['info'].setText(_('Downloading the selected file in /tmp') + self.dom + _('... please wait'))
                     cmd = ["wget -U '%s' -c '%s' -O '%s > /dev/null' " % (RequestAgent(), str(self.com), down)]
@@ -1992,9 +1991,9 @@ class NssInstall(Screen):
                     self.session.open(tvConsole, _('Downloading: %s') % self.dom, cmd, closeOnSuccess=False)
                     self['info'].setText(_('Download done !!!'))
                     self.session.open(MessageBox, _('Download file in /tmp successful!'), MessageBox.TYPE_INFO, timeout=5)
-                    self.timer.start(1000, True)
+                    # self.timer.start(1000, True)
                     self['info'].setText(_('Download file in /tmp successful!!'))
-                    return
+                    # return
             else:
                 self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
             self.timer.start(3000, 1)
@@ -2041,7 +2040,7 @@ class NssInstall(Screen):
             # if PY3:
                 # self.com = self.com.encode()
             self.downplug = self.com.split("/")[-1]
-            self.dest = '/tmp/' + self.downplug
+            self.dest = '/tmp/' + str(self.downplug)
             if os.path.exists(self.dest):
                 os.remove(self.dest)
             if self.com is not None:
