@@ -1,1 +1,1 @@
-Nonsolosat Panel FHD fix Thanks lululla
+Nonsolosat Panel Addon FHD fix Thanks lululla
