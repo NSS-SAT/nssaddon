@@ -11,6 +11,9 @@ from . import _
 from .lib import Utils
 from .lib.Utils import RequestAgent
 from .lib.Lcn import LCN
+
+# from . import Downloader
+from .Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
@@ -34,7 +37,7 @@ from Screens.Standby import TryQuitMainloop
 from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.Directories import SCOPE_PLUGINS
 from Tools.Directories import fileExists, resolveFilename
-from Tools.Downloader import downloadWithProgress
+# from Tools.Downloader import downloadWithProgress
 from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import loadPNG, gFont
 from enigma import eTimer
@@ -161,7 +164,7 @@ def make_req(url):
         import requests
         response = requests.get(url, verify=False)
         if response.status_code == 200:
-            link = requests.get(url, headers={'User-Agent': Utils.RequestAgent()}, timeout=15, verify=False, stream=True).text
+            link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=15, verify=False, stream=True).text
         return link
     except ImportError:
         req = Request(url)
@@ -354,7 +357,6 @@ if status_site():
 
 def nssListEntry(name, idx):
     res = [name]
-    # pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/setting.png".format('nssaddon'))  # ico1_path
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -1878,6 +1880,7 @@ class NssInstall(Screen):
             return
 
     def prombt(self, com, dom):
+        self.timer = eTimer()
         global set
         self.com = com
         self.dom = dom
@@ -1885,7 +1888,6 @@ class NssInstall(Screen):
         down = self.dowfil()
         self['info'].setText(_('Installing ') + self.dom + _('... please wait'))
         if self.com is not None:
-            self.timer = eTimer()
             extensionlist = self.com.split('.')
             extension = extensionlist[-1]  # .lower()
             if len(extensionlist) > 1:
@@ -1903,7 +1905,6 @@ class NssInstall(Screen):
 
                 self.session.open(tvConsole, title='Installation %s' % self.dom, cmdlist=[cmd, 'sleep 5'])  # , finishedCallback=self.msgipkinst)
                 self['info'].setText(_('Installation done !!!'))
-                # return
 
             elif extension == "deb":
                 if not os.path.exists('/var/lib/dpkg/status'):
@@ -1923,7 +1924,6 @@ class NssInstall(Screen):
                         # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    # return
             elif extension == "ipk":
                 if os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
@@ -1935,7 +1935,6 @@ class NssInstall(Screen):
                         # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    # return
             elif self.com.endswith('.zip'):
                 if 'setting' in self.dom.lower():
                     if not os.path.exists('/var/lib/dpkg/status'):
@@ -2044,8 +2043,10 @@ class NssInstall(Screen):
             if os.path.exists(self.dest):
                 os.remove(self.dest)
             if self.com is not None:
+                # print('self.com not none', self.com)
                 extensionlist = self.com.split('.')
                 extension = extensionlist[-1].lower()
+                # print('extension', extension)
                 if len(extensionlist) > 1:
                     tar = extensionlist[-2].lower()
                 if extension in ["gz", "bz2"] and tar == "tar":
@@ -2071,7 +2072,6 @@ class NssInstall(Screen):
                         self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                         self['info'].setText(_('Download canceled!'))
                         return
-
                 if os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
@@ -2079,7 +2079,7 @@ class NssInstall(Screen):
                 else:
                     self.download = downloadWithProgress(self.com, self.dest)
                     self.download.addProgress(self.downloadProgress)
-                    self.download.start().addCallback(self.install).addErrback(self.download_failed)
+                    self.download.start().addCallback(self.install).addErrback(self.showError)
             else:
                 self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
 
@@ -2090,19 +2090,17 @@ class NssInstall(Screen):
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
 
-    def install(self, string=''):
-        if self.aborted:
-            self.finish(aborted=True)
-        else:
-            self.progclear = 0
-            self['info'].setText(_('Please select ...'))
-            if os.path.exists(self.dest):
-                self.downloading = False
-                self['progresstext'].text = ''
-                self['progress'].setValue(self.progclear)
-                self["progress"].hide()
-                self['info'].setText(_('File Downloaded ...'))
-                self.NssIPK()
+    # def downloadProgress(self, recvbytes, totalbytes):
+        # self["progress"].show()
+        # self['info'].setText(_('Download...'))
+        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
+        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
+        # print('progress = ok')
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
 
     def download_failed(self, failure_instance=None, error_message=""):
         self.error_message = error_message
@@ -2147,6 +2145,20 @@ class NssInstall(Screen):
 
     def NssIPK(self):
         self.session.openWithCallback(self.close, NssIPK)
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('Please select ...'))
+            if os.path.exists(self.dest):
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                self['info'].setText(_('File Downloaded ...'))
+                self.NssIPK()
 
 
 class NssIPK(Screen):
@@ -3056,23 +3068,17 @@ class MMarkPiconsf(Screen):
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
 
-    def install(self, string=''):
-        if self.aborted:
-            self.finish(aborted=True)
-        else:
-            self.progclear = 0
-            self['info'].setText(_('File Downloaded ...'))
-            if os.path.exists('/tmp/download.zip'):
-                self['info'].setText(_('Install ...'))
-                self.downloading = False
-                self['progresstext'].text = ''
-                self['progress'].setValue(self.progclear)
-                self["progress"].hide()
-                self['info'].setText(_('Please select ...'))
-                myCmd = "unzip -o -q '/tmp/download.zip' -d %s/" % str(mmkpicon)
-                subprocess.Popen(myCmd, shell=True, executable='/bin/bash')
-                info = 'Successfully Picons Installed'
-                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+    # def downloadProgress(self, recvbytes, totalbytes):
+        # self["progress"].show()
+        # self['info'].setText(_('Download...'))
+        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
+        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
+        # print('progress = ok')
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
 
     def download_failed(self, failure_instance=None, error_message=""):
         self.error_message = error_message
@@ -3093,6 +3099,24 @@ class MMarkPiconsf(Screen):
     def download_finished(self, string=""):
         if self.aborted:
             self.finish(aborted=True)
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('File Downloaded ...'))
+            if os.path.exists('/tmp/download.zip'):
+                self['info'].setText(_('Install ...'))
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                self['info'].setText(_('Please select ...'))
+                myCmd = "unzip -o -q '/tmp/download.zip' -d %s/" % str(mmkpicon)
+                subprocess.Popen(myCmd, shell=True, executable='/bin/bash')
+                info = 'Successfully Picons Installed'
+                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
 class OpenPicons(Screen):
@@ -3209,13 +3233,12 @@ class OpenPicons(Screen):
                 # print('2 url type=', type(url))
                 # if PY3:
                     # url = url.encode()
-
                 self.dest = "/tmp/download.tar.xz"
                 if os.path.exists(self.dest):
                     os.remove(self.dest)
                 self.download = downloadWithProgress(url, self.dest)
                 self.download.addProgress(self.downloadProgress)
-                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+                self.download.start().addCallback(self.install).addErrback(self.showError)
             else:
                 self['info'].setText(_('Picons Not Installed ...'))
 
@@ -3225,6 +3248,38 @@ class OpenPicons(Screen):
         self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
+
+    # def downloadProgress(self, recvbytes, totalbytes):
+        # self["progress"].show()
+        # self['info'].setText(_('Download...'))
+        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
+        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
+        # print('progress = ok')
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
+
+    def download_failed(self, failure_instance=None, error_message=""):
+        self.error_message = error_message
+        if error_message == "" and failure_instance is not None:
+            self.error_message = failure_instance.getErrorMessage()
+        self.downloading = False
+        info = 'Download Failed!!! ' + self.error_message
+        self['info2'].setText(info)
+        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+    def abort(self):
+        print("aborting", self.url)
+        if self.download:
+            self.download.stop()
+        self.downloading = False
+        self.aborted = True
+
+    def download_finished(self, string=""):
+        if self.aborted:
+            self.finish(aborted=True)
 
     def install(self, string=''):
         if self.aborted:
@@ -3256,29 +3311,8 @@ class OpenPicons(Screen):
                     for name in files:
                         Cmd = "cp -rf  '" + path2 + "/" + name + "' " + str(mmkpicon)
                         os.system(Cmd)
-
                 info = 'Successfully Picons Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
-
-    def download_failed(self, failure_instance=None, error_message=""):
-        self.error_message = error_message
-        if error_message == "" and failure_instance is not None:
-            self.error_message = failure_instance.getErrorMessage()
-        self.downloading = False
-        info = 'Download Failed!!! ' + self.error_message
-        self['info2'].setText(info)
-        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
-
-    def abort(self):
-        print("aborting", self.url)
-        if self.download:
-            self.download.stop()
-        self.downloading = False
-        self.aborted = True
-
-    def download_finished(self, string=""):
-        if self.aborted:
-            self.finish(aborted=True)
 
 
 def autostart(reason, session=None, **kwargs):

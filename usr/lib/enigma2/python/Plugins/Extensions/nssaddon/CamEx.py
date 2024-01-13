@@ -16,8 +16,10 @@ from Screens.Screen import Screen
 from Tools.LoadPixmap import LoadPixmap
 from enigma import eListboxPythonMultiContent, gFont
 from enigma import eTimer, RT_HALIGN_LEFT, RT_VALIGN_CENTER
+from enigma import getDesktop
 import os
 from .lib.GetEcmInfo import GetEcmInfo
+screenwidth = getDesktop(0).size()
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/'
 cccaminfo = False
 ECM_INFO = '/tmp/ecm.info'
@@ -27,40 +29,33 @@ def main(session, **kwargs):
     session.open(NSSCamsManager)
 
 
-def DreamCCExtra(name, index, isActive=False):
-    res = [index]
-    res.append((eListboxPythonMultiContent.TYPE_TEXT,
-                90,
-                6,
-                400,
-                40,
-                0,
-                RT_HALIGN_LEFT | RT_VALIGN_CENTER,
-                name))
-    if isActive:
-        png = LoadPixmap(plugin_path + 'res/pics/on.png')
-    else:
-        png = LoadPixmap(plugin_path + 'res/pics/off.png')
-    res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST,
-                5,
-                3,
-                70,
-                40,
-                png))
-    return res
-
-
 class DCCMenu(MenuList):
 
     def __init__(self, list, selection=0, enableWrapAround=True):
         MenuList.__init__(self, list, enableWrapAround, eListboxPythonMultiContent)
-        self.l.setFont(0, gFont('Regular', 40))
+        # self.l.setFont(0, gFont('Regular', 40))
+        # self.l.setItemHeight(50)
+        # self.selection = selection
         self.l.setItemHeight(50)
+        textfont = int(32)
+        self.l.setFont(0, gFont('Regular', textfont))
         self.selection = selection
 
     def postWidgetCreate(self, instance):
         MenuList.postWidgetCreate(self, instance)
         self.moveToIndex(self.selection)
+
+
+def DreamCCExtra(name, index, isActive=False):
+    if isActive:
+        png = LoadPixmap(plugin_path + 'res/pics/on.png')
+    else:
+        png = LoadPixmap(plugin_path + 'res/pics/off.png')
+    res = [index]
+
+    res.append((eListboxPythonMultiContent.TYPE_TEXT, 90, 0, 900, 40, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, name))
+    res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST, 5, 3, 70, 40, png))
+    return res
 
 
 class NSSCamsManager(Screen):
@@ -154,7 +149,6 @@ class NSSCamsManager(Screen):
             except subprocess.CalledProcessError as e:
                 print(e.output)
                 self.session.open(MessageBox, _('SoftcamKeys Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
-            
 
     def setEcmInfo(self):
         try:
