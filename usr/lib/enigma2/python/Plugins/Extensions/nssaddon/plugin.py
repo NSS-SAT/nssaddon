@@ -13,7 +13,7 @@ from .lib.Utils import RequestAgent
 from .lib.Lcn import LCN
 
 # from . import Downloader
-from .Downloader import downloadWithProgress
+from .lib.Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
@@ -1310,12 +1310,13 @@ class SettingMorpheus(Screen):
         self.names = []
         self.urls = []
         try:
-            regex = 'title="E2_Morph883_(.*?).zip".*?href="(.*?)"'
+            regex = 'name":"E2_Morph883_(.*?).zip".*?path":"(.*?)"'
+            # regex = 'title="E2_Morph883_(.*?).zip".*?href="(.*?)"'
             match = re.compile(regex).findall(r)
             for name, url in match:
                 if url.find('.zip') != -1:
                     url = url.replace('blob', 'raw')
-                    url = 'https://github.com' + url
+                    url = 'https://github.com/morpheus883/enigma2-zipped/raw/master/' + url
                     name = 'Morph883 ' + name
                     self.urls.append(Utils.checkStr(url.strip()))
                     self.names.append(Utils.checkStr(name.strip()))
@@ -2062,24 +2063,25 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
                     return
 
-                if extension == "deb":
-                    if not os.path.exists('/var/lib/dpkg/status'):
-                        self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
-                        self['info'].setText(_('Download canceled!'))
-                        return
-                elif self.com.endswith(".ipk"):
-                    if os.path.exists('/var/lib/dpkg/info'):
-                        self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
-                        self['info'].setText(_('Download canceled!'))
-                        return
-                if os.path.exists('/var/lib/dpkg/info'):
-                    self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
+                if extension == "deb" and not os.path.exists('/var/lib/dpkg/status'):
+                    # if not os.path.exists('/var/lib/dpkg/status'):
+                    self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
-                else:
-                    self.download = downloadWithProgress(self.com, self.dest)
-                    self.download.addProgress(self.downloadProgress)
-                    self.download.start().addCallback(self.install).addErrback(self.showError)
+                # elif self.com.endswith(".ipk"):
+                elif extension == ".ipk" and os.path.exists('/var/lib/dpkg/info'):
+                    # if os.path.exists('/var/lib/dpkg/info'):
+                    self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
+                    self['info'].setText(_('Download canceled!'))
+                    return
+                # if os.path.exists('/var/lib/dpkg/info'):
+                    # self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
+                    # self['info'].setText(_('Download canceled!'))
+                    # return
+                # else:
+                self.download = downloadWithProgress(self.com, self.dest)
+                self.download.addProgress(self.downloadProgress)
+                self.download.start().addCallback(self.install).addErrback(self.showError)
             else:
                 self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
 
@@ -2108,7 +2110,7 @@ class NssInstall(Screen):
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
         info = 'Download Failed!!! ' + self.error_message
-        self['info2'].setText(info)
+        self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
         return
 
@@ -3086,7 +3088,7 @@ class MMarkPiconsf(Screen):
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
         info = 'Download Failed!!! ' + self.error_message
-        self['info2'].setText(info)
+        self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
     def abort(self):
@@ -3267,7 +3269,7 @@ class OpenPicons(Screen):
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
         info = 'Download Failed!!! ' + self.error_message
-        self['info2'].setText(info)
+        self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
     def abort(self):
@@ -3315,6 +3317,31 @@ class OpenPicons(Screen):
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
+                                                        
+                                 
+                                                
+                                                                           
+                                                                                                                                             
+                                
+
+                        
+                                
+                                
+                    
+
+                                  
+                        
+              
+
+                               
+                                                    
+              
+
+                                                                       
+                                          
+                                                                
+                                                                   
+                                
 def autostart(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
