@@ -237,7 +237,7 @@ global set
 config.plugins.nssaddon = ConfigSubsection()
 config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
 config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
-config.plugins.nssaddon.strtmain = ConfigYesNo(default=True)
+config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
 config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
 currversion = '1.0.0'
@@ -3377,12 +3377,14 @@ def main(session, **kwargs):
     except:
         pass
 
-
 def cfgmain(menuid, **kwargs):
     if menuid == 'mainmenu':
-        return [(_('Nss Addons'), main, 'Nss Addon', 44)]
+        return [(_('Nss Addons'), main, 'Nss Addon', 4)]
+    else:
+        return []
 
-    elif menuid == 'cam':
+def cfgcam(menuid, **kwargs):
+    if menuid == 'cam':
         from Tools.BoundFunction import boundFunction
         return [(_(name_cam),
                  boundFunction(main2, showExtentionMenuOption=True),
@@ -3404,8 +3406,8 @@ def mainmenu(session, **kwargs):
 def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
-    result = [PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgmain),
-              PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+    result = [PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+              PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgcam),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:
         result.append(extDescriptor)
