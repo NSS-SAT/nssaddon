@@ -11,8 +11,6 @@ from . import _
 from .lib import Utils
 from .lib.Utils import RequestAgent
 from .lib.Lcn import LCN
-
-# from . import Downloader
 from .lib.Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
@@ -861,8 +859,8 @@ class SettingVhan(Screen):
             for url, name, date in match:
                 name = name.replace('&#127381;', '') + ' ' + date
                 url = "https://www.vhannibal.net/" + url
-                self.urls.append(Utils.checkStr(url.strip()))
-                self.names.append(Utils.checkStr(name.strip()))
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
             self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
@@ -974,8 +972,8 @@ class SettingVhan2(Screen):
                 name = "Vhannibal" + url
                 name = name.replace('&#127381;', '').replace("%20", " ")
                 url = "http://sat.alfa-tech.net/upload/settings/vhannibal/Vhannibal" + url + '.zip'
-                self.urls.append(Utils.checkStr(url.strip()))
-                self.names.append(Utils.checkStr(name.strip()))
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
@@ -1111,8 +1109,8 @@ class Milenka61(Screen):
                     name = name + ' ' + date
                     name = name.replace("_", " ").replace(".tar.gz", "")
                     url = "http://178.63.156.75/tarGz/Satvenus" + url
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
@@ -1207,8 +1205,8 @@ class SettingManutek(Screen):
                 name = url
                 url = 'http://www.manutek.it/isetting/enigma2/' + url + '.zip'
                 name = name.replace("NemoxyzRLS_Manutek_", "").replace("_", " ").replace("%20", " ")
-                self.urls.append(Utils.checkStr(url.strip()))
-                self.names.append(Utils.checkStr(name.strip()))
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
@@ -1318,8 +1316,8 @@ class SettingMorpheus(Screen):
                     url = url.replace('blob', 'raw')
                     url = 'https://github.com/morpheus883/enigma2-zipped/raw/master/' + url
                     name = 'Morph883 ' + name
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
@@ -1436,8 +1434,8 @@ class SettingCiefp(Screen):
                 if url.find('.zip') != -1:
                     url = url.replace('blob', 'raw')
                     url = 'https://github.com' + url
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
@@ -1546,8 +1544,8 @@ class SettingBi58(Screen):
                     name = name + ' ' + date
                     name = name.replace(".tar.gz", "").replace("%20", " ")
                     url = "http://178.63.156.75/paneladdons/Bi58/bi58-e2" + url
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
@@ -1645,8 +1643,8 @@ class SettingPredrag(Screen):
                     name = name + ' ' + date
                     name = name.replace(".tar.gz", "").replace("%20", " ")
                     url = "http://178.63.156.75/paneladdons/Predr@g/predrag" + url
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
@@ -1754,8 +1752,8 @@ class SettingCyrus(Screen):
                     if 'Sat' in name.lower():
                         continue
                     name = name + ' ' + date
-                    self.urls.append(Utils.checkStr(url.strip()))
-                    self.names.append(Utils.checkStr(name.strip()))
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
@@ -2014,8 +2012,8 @@ class NssInstall(Screen):
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
         urllib2.install_opener(opener)
         try:
-            req = urllib2.Request(self.com, data=None, headers=headers)
-            handler = urllib2.urlopen(req, timeout=15)
+            req = Request(self.com, data=None, headers=headers)
+            handler = urlopen(req, timeout=15)
             data = handler.read()
             with open(self.dest, 'wb') as f:
                 f.write(data)
@@ -2062,7 +2060,6 @@ class NssInstall(Screen):
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
                     return
-
                 if extension == "deb" and not os.path.exists('/var/lib/dpkg/status'):
                     # if not os.path.exists('/var/lib/dpkg/status'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
@@ -2081,7 +2078,7 @@ class NssInstall(Screen):
                 # else:
                 self.download = downloadWithProgress(self.com, self.dest)
                 self.download.addProgress(self.downloadProgress)
-                self.download.start().addCallback(self.install).addErrback(self.showError)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
             else:
                 self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
 
@@ -2378,7 +2375,6 @@ class NssRemove(Screen):
                                      'ColorActions'], {'green': self.message1,
                                                        'ok': self.message1,
                                                        'yellow': self.msgipkrst,
-                                                       # 'blue': self.scriptrun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -1)
         self.onLayoutFinish.append(self.getfreespace)
@@ -2628,7 +2624,7 @@ class nssConfig(Screen, ConfigListScreen):
             self['info'].setText(info)
         except Exception as e:
             print("Error ", e)
-            self['info'].setText(_('(:) by Lululla '))
+            self['info'].setText(_(':) by Lululla '))
 
     def createSetup(self):
         self.editListEntry = None
@@ -3056,7 +3052,7 @@ class MMarkPiconsf(Screen):
                     # # url =  'https://download' + str(myfile)
                     self.download = downloadWithProgress(url, dest)
                     self.download.addProgress(self.downloadProgress)
-                    self.download.start().addCallback(self.install).addErrback(self.showError)
+                    self.download.start().addCallback(self.install).addErrback(self.download_failed)
                 except Exception as e:
                     print('error: ', str(e))
                     print("Error: can't find file or read data")
@@ -3180,8 +3176,6 @@ class OpenPicons(Screen):
             print(e)
 
     def downxmlpage(self):
-        # url = six.ensure_binary(self.url)
-        # url = make_req(self.url)
         try:
             data = make_req(self.url)
             if PY3:
@@ -3213,7 +3207,7 @@ class OpenPicons(Screen):
                 print('name=', name)
                 print('url:', url)
                 self.urls.append(url)
-                self.names.append(Utils.checkStr(name))
+                self.names.append(Utils.str_encode(name))
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
             showlistNss(self.names, self['list'])
@@ -3222,7 +3216,7 @@ class OpenPicons(Screen):
             self.downloading = False
 
     def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?\nATTENTION: MAKE SURE YOU HAVE ENOUGH SPACE\nTHERE ARE A LOT OF PICONS AND IT TAKES TIME!!!"), MessageBox.TYPE_YESNO)
 
     def okRun1(self, answer):
         if answer:
@@ -3240,7 +3234,7 @@ class OpenPicons(Screen):
                     os.remove(self.dest)
                 self.download = downloadWithProgress(url, self.dest)
                 self.download.addProgress(self.downloadProgress)
-                self.download.start().addCallback(self.install).addErrback(self.showError)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
             else:
                 self['info'].setText(_('Picons Not Installed ...'))
 
@@ -3316,32 +3310,7 @@ class OpenPicons(Screen):
                 info = 'Successfully Picons Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
-
-                                                        
-                                 
-                                                
-                                                                           
-                                                                                                                                             
-                                
-
-                        
-                                
-                                
-                    
-
-                                  
-                        
-              
-
-                               
-                                                    
-              
-
-                                                                       
-                                          
-                                                                
-                                                                   
-                                
+       
 def autostart(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
