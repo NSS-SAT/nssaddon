@@ -315,7 +315,7 @@ Panel_list2 = [
  ('UPDATE TERRESTRIAL.XML'),
  ('SETTINGS BI58'),
  ('SETTINGS CIEFP'),
- ('SETTINGS CYRUS'),
+ # ('SETTINGS CYRUS'),
  ('SETTINGS MANUTEK'),
  ('SETTINGS MILENKA61'),
  ('SETTINGS MORPHEUS'),
@@ -3317,7 +3317,7 @@ def autostart(reason, session=None, **kwargs):
     if reason == 0:
         print('reason 0')
         if session is not None:
-            print('session none')
+            print('session not none')
             try:
                 print('ok started autostart')
                 if fileExists('/etc/init.d/dccamd'):
@@ -3329,12 +3329,15 @@ def autostart(reason, session=None, **kwargs):
                 os.system("ln -sf /usr/scce /var/scce")
                 # os.system("ln -sf /usr/camscript /var/camscript")
                 os.system("sleep 2")
-                os.system("/etc/startcam.sh &")
-                os.system('sleep 2')
-                print("*** running autostart ***")
+                os.system("/etc/startcam.sh")
+                # script = '/etc/startcam.sh'
+                # import subprocess
+                # subprocess.check_output(['bash', script])
+                print("*** running startcam ***")
             except:
-
                 print('except autostart')
+            os.system('sleep 2')
+                
         else:
             print('pass autostart')
     return
