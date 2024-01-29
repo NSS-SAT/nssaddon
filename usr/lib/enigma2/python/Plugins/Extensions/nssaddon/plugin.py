@@ -239,7 +239,7 @@ config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
 config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
 currversion = '1.0.0'
-title_plug = '..:: NSS Addon Panel V. %s ::..' % currversion
+title_plug = 'NSS Addon Panel V. %s' % currversion
 name_plug = 'NSS Addon Panel'
 name_cam = 'NSS Softcam Manager'
 category = 'lululla.xml'
@@ -357,7 +357,7 @@ def nssListEntry(name, idx):
     res = [name]
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryText(pos=(80, 0), size=(1950, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -371,7 +371,7 @@ def oneListEntry(name):
     res = [name]
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(80, 0), size=(2000, 60), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryText(pos=(80, 0), size=(1950, 60), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -504,65 +504,65 @@ class HomeNss(Screen):
             self.session.open(NssDailySetting)
         if sel == _('SETTING CHANNEL NSS'):
             category = 'Settingchannelnss.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('DAILY PICONS'):
             self.session.open(SelectPiconz)
         if sel == _('LULULLA CORNER'):
             category = 'lululla.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('DRIVERS'):
             category = 'Drivers.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('DEPENDENCIES'):
             category = 'Dependencies.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN BACKUP'):
             category = 'PluginBackup.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN EMULATORS CAMS'):
             category = 'PluginEmulators.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN EPG'):
             category = 'PluginEpg.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN GAME'):
             category = 'PluginGame.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN MULTIBOOT'):
             category = 'PluginMultiboot.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN MULTIMEDIA'):
             category = 'PluginMultimedia.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN PICONS'):
             category = 'Picons.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN PPANEL'):
             category = 'PluginPpanel.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN SCRIPT'):
             category = 'PlugiScript.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN SETTINGS PANEL'):
             category = 'PluginSettings.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN SKINS'):
             category = 'PluginSkins.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN SPORT'):
             category = 'PluginSport.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN UTILITY'):
             category = 'PluginUtility.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         if sel == _('PLUGIN WEATHER'):
             category = 'PluginWeather.xml'
-            self.session.open(Categories, category)
+            self.session.open(nssCategories, category)
         else:
             return
 
 
-class Categories(Screen):
+class nssCategories(Screen):
     def __init__(self, session, category):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
