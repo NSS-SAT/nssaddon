@@ -19,10 +19,14 @@ from enigma import eTimer, RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import getDesktop
 import os
 from .lib.GetEcmInfo import GetEcmInfo
+
+
 screenwidth = getDesktop(0).size()
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/'
 cccaminfo = False
 ECM_INFO = '/tmp/ecm.info'
+currversion = '1.0.0'
+title_plug = 'NSS Softcam Manager V. %s' % currversion
 
 
 def main(session, **kwargs):
@@ -109,11 +113,9 @@ class NSSCamsManager(Screen):
         self.lastCam = self.readCurrent()
         self['info'] = Label()
         self['ecm'] = Label('')
-        # self['pixmap'] = Pixmap()
         self['list'] = DCCMenu(self.softcamlist)
         self.readScripts()
-        title = 'Nss Cams Manager'
-        self.setTitle(title)
+        self.setTitle(title_plug)
         self.EcmInfoPollTimer = eTimer()
         try:
             self.EcmInfoPollTimer_conn = self.EcmInfoPollTimer.timeout.connect(self.setEcmInfo)
@@ -148,7 +150,7 @@ class NSSCamsManager(Screen):
                 self.session.open(MessageBox, _('SoftcamKeys Updated!'), MessageBox.TYPE_INFO, timeout=5)
             except subprocess.CalledProcessError as e:
                 print(e.output)
-                self.session.open(MessageBox, _('SoftcamKeys Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
+                self.session.open(MessageBox, _('SoftcamKeys Updated Failed!'), MessageBox.TYPE_INFO, timeout=5)
 
     def setEcmInfo(self):
         try:
@@ -191,8 +193,7 @@ class NSSCamsManager(Screen):
         self.readScripts()
         self.lastCam = self.readCurrent()
         self.ecm()
-        title = 'Nss Cams Manager'
-        self.setTitle(title)
+        self.setTitle(title_plug)
         self.openCCcamInfo()
 
     def showcccaminfo(self):
@@ -377,8 +378,15 @@ class NSSCamsManager(Screen):
         delemu = 'no'
         if os.path.isfile('/etc/autocam.txt') is False:
             return
-        myfile = open('/etc/autocam.txt', 'r')
-        myfile2 = open('/etc/autocam2.txt', 'w')
+        if sys.version_info[0] == 3:
+            myfile = open('/etc/autocam.txt', 'r', encoding='UTF-8')
+        else:
+            myfile = open('/etc/autocam.txt', 'r')
+
+        if sys.version_info[0] == 3:
+            myfile2 = open('/etc/autocam2.txt', 'w', encoding='UTF-8')
+        else:
+            myfile2 = open('/etc/autocam2.txt', 'w')    
         icount = 0
         for line in myfile.readlines():
             if line[:-1] == self.oldService.toString():
@@ -399,5 +407,5 @@ class NSSCamsManager(Screen):
 
     def stardown(self):
         category = 'PluginEmulators.xml'
-        from Plugins.Extensions.nssaddon.plugin import Categories
-        self.session.open(Categories, category)
+        from Plugins.Extensions.nssaddon.plugin import nssCategories
+        self.session.open(nssCategories, category)
