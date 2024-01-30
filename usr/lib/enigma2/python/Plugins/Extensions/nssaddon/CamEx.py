@@ -115,7 +115,7 @@ class NSSCamsManager(Screen):
         self['ecm'] = Label('')
         self['list'] = DCCMenu(self.softcamlist)
         self.readScripts()
-        self.setTitle(title_plug)
+        # self.setTitle(title_plug)
         self.EcmInfoPollTimer = eTimer()
         try:
             self.EcmInfoPollTimer_conn = self.EcmInfoPollTimer.timeout.connect(self.setEcmInfo)
