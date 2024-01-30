@@ -397,7 +397,7 @@ class HomeNss(Screen):
         skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Panel')
+        self.setup_title = (name_plug)
         Screen.__init__(self, session)
         self['list'] = nssList([])
         self['key_red'] = Button(_('Exit'))
@@ -411,7 +411,7 @@ class HomeNss(Screen):
         self['statusred'] = Pixmap()
         self['statusred'].hide()
         self['status'] = Label('Please wait..')
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(name_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'EPGSelectActions',
@@ -592,7 +592,7 @@ class nssCategories(Screen):
         else:
             self.timer.callback.append(self._gotPageLoad)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(name_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'EPGSelectActions',
@@ -660,11 +660,11 @@ class NssDailySetting(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Daily Setting')
+        self.setup_title = ('DAILY SETTINGS')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self['list'] = nssList([])
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -815,9 +815,9 @@ class SettingVhan(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Vhannibal')
+        self.setup_title = ('Vhannibal Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -840,7 +840,7 @@ class SettingVhan(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(name_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -924,9 +924,9 @@ class SettingVhan2(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Vhannibal')
+        self.setup_title = ('Vhannibal Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -949,7 +949,7 @@ class SettingVhan2(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1059,9 +1059,9 @@ class Milenka61(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Milenka61')
+        self.setup_title = ('Milenka61 Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1084,7 +1084,7 @@ class Milenka61(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1158,9 +1158,9 @@ class SettingManutek(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Manutek')
+        self.setup_title = ('Manutek Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1183,7 +1183,7 @@ class SettingManutek(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1267,9 +1267,9 @@ class SettingMorpheus(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Morpheus')
+        self.setup_title = ('Morpheus Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1292,7 +1292,7 @@ class SettingMorpheus(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1378,9 +1378,9 @@ class SettingCiefp(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Ciefp')
+        self.setup_title = ('Ciefp Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1403,7 +1403,7 @@ class SettingCiefp(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1494,9 +1494,9 @@ class SettingBi58(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Bi58')
+        self.setup_title = ('Bi58 Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1519,7 +1519,7 @@ class SettingBi58(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1593,9 +1593,9 @@ class SettingPredrag(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Predrag')
+        self.setup_title = ('Predrag Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1618,7 +1618,7 @@ class SettingPredrag(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1692,9 +1692,9 @@ class SettingCyrus(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Setting Cyrus')
+        self.setup_title = ('Cyrus Setting')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -1718,7 +1718,7 @@ class SettingCyrus(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1812,9 +1812,9 @@ class NssInstall(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Install')
+        self.setup_title = ('NSS CONSOLE')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.selection = selection
         self['info'] = Label('')
         self['pth'] = Label('')
@@ -1848,7 +1848,7 @@ class NssInstall(Screen):
             self.urls.append(url)
         self['list'] = nssList([])
         self['info'].setText(_('Please install ...'))
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Install'))
         self['key_yellow'] = Button(_('Download'))
@@ -2166,9 +2166,9 @@ class NssIPK(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Install')
+        self.setup_title = (name_plug)
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.ipkpth = str(config.plugins.nssaddon.ipkpth.value)
         self.list = []
         self.names = []
@@ -2179,7 +2179,7 @@ class NssIPK(Screen):
         self['key_yellow'] = Button(_('Script'))
         self["key_blue"] = Button('Remove')
         self['key_blue'].hide()
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['pform'] = Label('')
         self['info'] = Label('...')
         self['pth'] = Label(_('Path %s (Set path folder from config)\nPut .ipk .tar.gz .deb .zip and install') % self.ipkpth)
@@ -2346,9 +2346,9 @@ class NssRemove(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Remove')
+        self.setup_title = (name_plug)
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self.names = []
         self.container = eConsoleAppContainer()
@@ -2364,7 +2364,7 @@ class NssRemove(Screen):
         self["key_blue"] = Button('Script')
         self['key_blue'].hide()
         self['key_green'].hide()
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title)
         self['pform'] = Label('')
         self['info'] = Label('Select')
         self['pth'] = Label('Remove not necessary addon')
@@ -2492,7 +2492,7 @@ class ScriptExecuter(Screen):
         skin = os.path.join(skin_path, 'scriptpanel.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setTitle(_('NSS Addon Script'))
+        self.setTitle(name_plug)
 
         self['labstatus'] = Label(_('NO SCRIPT FOUND'))
         self['key_red'] = Label(_('Exit'))
@@ -2510,7 +2510,7 @@ class ScriptExecuter(Screen):
         self.onShown.append(self.setWindowTitle)
 
     def setWindowTitle(self):
-        self.setTitle(_('NSS Addon Script'))
+        self.setTitle(self.setup_title)
 
     def script_sel(self):
         self['list'].index = 1
@@ -2564,10 +2564,10 @@ class nssConfig(Screen, ConfigListScreen):
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         Screen.__init__(self, session)
-        self.setup_title = _("NSS Addon Config")
+        self.setup_title = _("Config NSS Addon")
         self.onChangedEntry = []
         self.session = session
-        self.setTitle(_('NSS Addon Config'))
+        self.setTitle(self.setup_title )
         self['description'] = Label('')
         self['info'] = Label(_('Config Panel Addon'))
         # self['info'] = ScrollLabel('')
@@ -2577,7 +2577,7 @@ class nssConfig(Screen, ConfigListScreen):
         self["key_blue"] = Button('')
         self['key_blue'].hide()
         self['key_yellow'].hide()
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title )
         self["setupActions"] = ActionMap(['OkCancelActions',
                                           'DirectionActions',
                                           'ColorActions',
@@ -2607,7 +2607,7 @@ class nssConfig(Screen, ConfigListScreen):
         return str(zarcffll)
 
     def layoutFinished(self):
-        self.setTitle(self.setup_title)
+        # self.setTitle(self.setup_title)
         try:
             arkFull = ''
             if self.arckget():
@@ -2737,7 +2737,7 @@ class SelectPiconz(Screen):
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title )
         self['list'] = nssList([])
         self['pth'] = Label('')
         self['pth'].setText(_('Folder picons ') + str(mmkpicon))
@@ -2754,7 +2754,7 @@ class SelectPiconz(Screen):
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title )
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -2829,7 +2829,7 @@ class MMarkFolderz(Screen):
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -2854,7 +2854,7 @@ class MMarkFolderz(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title )
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -2931,7 +2931,7 @@ class MMarkPiconsf(Screen):
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -2964,7 +2964,7 @@ class MMarkPiconsf(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title )
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -3125,7 +3125,7 @@ class OpenPicons(Screen):
             self.skin = f.read()
         self.setup_title = ('OpenPicons')
         Screen.__init__(self, session)
-        self.setTitle(_(title_plug))
+        self.setTitle(self.setup_title)
         self.list = []
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
@@ -3157,7 +3157,7 @@ class OpenPicons(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(_(title_plug))
+        self['title'] = Label(self.setup_title )
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
