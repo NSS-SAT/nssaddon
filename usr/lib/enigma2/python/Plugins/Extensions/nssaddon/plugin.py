@@ -582,7 +582,7 @@ class nssCategories(Screen):
         self['key_green'] = Button(_('Extensions Installer'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button(_('Uninstall'))
-        self["key_blue"] = Button(_("NSS Cams Manager"))
+        self["key_blue"] = Button(_("NSS Softcam Manager"))
         # self['key_blue'].hide()
         self.Update = False
         self.downloading = False
