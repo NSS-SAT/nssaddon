@@ -2510,7 +2510,7 @@ class ScriptExecuter(Screen):
         self.onShown.append(self.setWindowTitle)
 
     def setWindowTitle(self):
-        self.setTitle(self.setup_title)
+        self.setTitle(self.setTitle)
 
     def script_sel(self):
         self['list'].index = 1
