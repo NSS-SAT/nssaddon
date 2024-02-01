@@ -249,13 +249,13 @@ class NSSCamsManager(Screen):
                 self.cmd1 = '/usr/script/cam/' + self.sclist[var] + ' cam_up &'
                 os.system(self.cmd1)
         else:
-            try:
-                self.cmd1 = '/usr/script/cam/' + self.sclist[var] + ' cam_up &'
-                os.system(self.cmd1)
-                os.system('sleep 3')
-            except:
-                self.refresh
-                return
+            # try:
+            self.cmd1 = '/usr/script/cam/' + self.sclist[var] + ' cam_up &'
+            os.system(self.cmd1)
+            os.system('sleep 3')
+            # except:
+                # self.refresh
+                # return
 
         if last != var:
             try:
