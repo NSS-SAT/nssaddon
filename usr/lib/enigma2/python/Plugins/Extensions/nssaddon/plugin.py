@@ -315,9 +315,9 @@ Panel_list2 = [
  ('UPDATE TERRESTRIAL.XML'),
  ('SETTINGS BI58'),
  ('SETTINGS CIEFP'),
- # ('SETTINGS CYRUS'),
+ ('SETTINGS CYRUS'),
  ('SETTINGS MANUTEK'),
- ('SETTINGS MILENKA61'),
+ # ('SETTINGS MILENKA61'),
  ('SETTINGS MORPHEUS'),
  ('SETTINGS PREDRAG'),
  ('SETTINGS VHANNIBAL'),
@@ -424,6 +424,7 @@ class HomeNss(Screen):
                                                            'red': self.closerm,
                                                            'back': self.closerm,
                                                            'cancel': self.closerm}, -1)
+        self.onFirstExecBegin.append(self.check_dependencies)
         self.onLayoutFinish.append(self.updateMenuList)
 
     def __layoutFinished(self):
