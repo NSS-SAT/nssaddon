@@ -39,12 +39,12 @@ if fileExists("/usr/lib/enigma2/python/Components/Console.py"):
     NEW_CVS = True
 else:
     NEW_CVS = False
-from Plugins.Extensions.Levi45MulticamManager.data import CCcamPrioMaker
-from Plugins.Extensions.Levi45MulticamManager.data import CCcamOrganizer
+from Plugins.Extensions.nssaddon.data import CCcamPrioMaker
+from Plugins.Extensions.nssaddon.data import CCcamOrganizer
 
 VERSION         = "v1.4z"
 DATE            = "15.12.2020"
-plugin_path     = '/usr/lib/enigma2/python/Plugins/Extensions/Levi45MulticamManager'
+plugin_path     = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon'
 CFG             = "/etc/CCcam.cfg"
 ecmInfoStart    = None
 desktop         = getDesktop(0)

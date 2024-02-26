@@ -112,7 +112,7 @@ def status_site():
     try:
         Host = 'https://www.nonsolosat.net'
         # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
-        response = requests.get(Host, verify=False)
+        response = requests.get(Host, verify=False, timeout=5)
         if response.status_code == 200:
             status = True
             print('Web site exists')
@@ -160,7 +160,7 @@ def checkMyFile(url):
 def make_req(url):
     try:
         import requests
-        response = requests.get(url, verify=False)
+        response = requests.get(url, verify=False, timeout=5)
         if response.status_code == 200:
             link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=15, verify=False, stream=True).text
         return link
@@ -181,7 +181,7 @@ def check_gzip(url):
     response = None
     request = Request(url, headers=hdr)
     try:
-        response = urlopen(request, timeout=20)
+        response = urlopen(request, timeout=15)
         if response.info().get('Content-Encoding') == 'gzip':
             buffer = StringIO(response.read())
             deflatedContent = gzip.GzipFile(fileobj=buffer)
@@ -607,12 +607,8 @@ class nssCategories(Screen):
                                                            'cancel': self.close}, -2)
 
     def _gotPageLoad(self):
-        self.xml = str(xml_path) + self.category
-        # if PY3:
-            # self.xml = self.xml.encode()
-        # else:
-            # self.xml = self.xml
-        self.xml = check_gzip(self.xml)
+        xml = str(xml_path) + self.category
+        self.xml = check_gzip(xml)
         try:
             match = re.compile(regexC, re.DOTALL).findall(self.xml)
             for name in match:
@@ -823,7 +819,7 @@ class SettingVhan(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -932,7 +928,7 @@ class SettingVhan2(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1067,7 +1063,7 @@ class Milenka61(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1166,7 +1162,7 @@ class SettingManutek(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT SAT.TECHNOLOGY SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1275,7 +1271,7 @@ class SettingMorpheus(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT MORPHEUS883.ALTERVISTA.ORG SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1386,7 +1382,7 @@ class SettingCiefp(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT GITHUB.COM/CIEFP SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1420,12 +1416,6 @@ class SettingCiefp(Screen):
         self.names = []
         self.urls = []
         try:
-            # if PY3:
-                # n1 = r.find('title="README.txt'.encode(), 0)
-                # n2 = r.find('href="#readme">'.encode(), n1)
-            # else:
-                # n1 = r.find('title="README.txt', 0)
-                # n2 = r.find('href="#readme">', n1)
             n1 = r.find('title="README.txt', 0)
             n2 = r.find('href="#readme">', n1)
             r = r[n1:n2]
@@ -1502,7 +1492,7 @@ class SettingBi58(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1601,7 +1591,7 @@ class SettingPredrag(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1700,7 +1690,7 @@ class SettingCyrus(Screen):
         self['list'] = nssList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pform'] = Label('')
+        self['pform'] = Label('PLEASE VISIT CYRUSSETTINGS.COM SITE')
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -1735,12 +1725,6 @@ class SettingCyrus(Screen):
         self.names = []
         self.urls = []
         try:
-            # if PY3:
-                # n1 = r.find('name="Sat">'.encode(), 0)
-                # n2 = r.find('/ruleset>'.encode(), n1)
-            # else:
-                # n1 = r.find('name="Sat">', 0)
-                # n2 = r.find('/ruleset>', n1)
             n1 = r.find('name="Sat">', 0)
             n2 = r.find("/ruleset>", n1)
             r = r[n1:n2]
@@ -2089,13 +2073,6 @@ class NssInstall(Screen):
         self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
-
-    # def downloadProgress(self, recvbytes, totalbytes):
-        # self["progress"].show()
-        # self['info'].setText(_('Download...'))
-        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
-        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
-        # print('progress = ok')
 
     def showError(self):
         print("download error ")
@@ -2568,7 +2545,7 @@ class nssConfig(Screen, ConfigListScreen):
         self.setup_title = _("Config NSS Addon")
         self.onChangedEntry = []
         self.session = session
-        self.setTitle(self.setup_title )
+        self.setTitle(self.setup_title)
         self['description'] = Label('')
         self['info'] = Label(_('Config Panel Addon'))
         # self['info'] = ScrollLabel('')
@@ -2578,7 +2555,7 @@ class nssConfig(Screen, ConfigListScreen):
         self["key_blue"] = Button('')
         self['key_blue'].hide()
         self['key_yellow'].hide()
-        self['title'] = Label(self.setup_title )
+        self['title'] = Label(self.setup_title)
         self["setupActions"] = ActionMap(['OkCancelActions',
                                           'DirectionActions',
                                           'ColorActions',
@@ -2738,7 +2715,7 @@ class SelectPiconz(Screen):
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
         Screen.__init__(self, session)
-        self.setTitle(self.setup_title )
+        self.setTitle(self.setup_title)
         self['list'] = nssList([])
         self['pth'] = Label('')
         self['pth'].setText(_('Folder picons ') + str(mmkpicon))
@@ -2755,7 +2732,7 @@ class SelectPiconz(Screen):
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
-        self['title'] = Label(self.setup_title )
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -2783,8 +2760,8 @@ class SelectPiconz(Screen):
             list.append(nssListEntry(x, idx))
             self.menu_list.append(x)
             idx += 1
-        self['list'].setList(list)
         self['key_green'].show()
+        self['list'].setList(list)
         self['info'].setText(_('Please select'))
         self.getfreespace()
 
@@ -2855,7 +2832,7 @@ class MMarkFolderz(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title )
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -2885,12 +2862,6 @@ class MMarkFolderz(Screen):
         self.names = []
         self.urls = []
         try:
-            # if PY3:
-                # n1 = r.find('"folderkey"'.encode(), 0)
-                # n2 = r.find('more_chunks'.encode(), n1)
-            # else:
-                # n1 = r.find('"folderkey"', 0)
-                # n2 = r.find('more_chunks', n1)
             n1 = r.find('"folderkey"', 0)
             n2 = r.find('more_chunks', n1)
             data2 = r[n1:n2]
@@ -2965,7 +2936,7 @@ class MMarkPiconsf(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title )
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -2995,12 +2966,6 @@ class MMarkPiconsf(Screen):
         self.names = []
         self.urls = []
         try:
-            # if PY3:
-                # n1 = r.find('"quickkey":'.encode(), 0)
-                # n2 = r.find('more_chunks'.encode(), n1)
-            # else:
-                # n1 = r.find('"quickkey":', 0)
-                # n2 = r.find('more_chunks', n1)
             n1 = r.find('"quickkey":', 0)
             n2 = r.find('more_chunks', n1)
             data2 = r[n1:n2]
@@ -3066,13 +3031,6 @@ class MMarkPiconsf(Screen):
         self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
-
-    # def downloadProgress(self, recvbytes, totalbytes):
-        # self["progress"].show()
-        # self['info'].setText(_('Download...'))
-        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
-        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
-        # print('progress = ok')
 
     def showError(self):
         print("download error ")
@@ -3158,7 +3116,7 @@ class OpenPicons(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title )
+        self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -3195,7 +3153,6 @@ class OpenPicons(Screen):
         r = data
         if PY3:
             r = six.ensure_str(data)
-        print('rrrrrrrrrrrrrrr=:', r)
         self.names = []
         self.urls = []
         try:
@@ -3205,8 +3162,6 @@ class OpenPicons(Screen):
                 # full-motor-srp/hardlink/srp-full.100x60-86x46.dark.on.blue_2023-12-12--23-58-23.hardlink.tar.xz"
                 name = url.replace('.hardlink', '').replace('.', '-').replace('_', '-')
                 url = 'https://openpicons.com/picons/full-motor-srp/hardlink/' + url + '.tar.xz'
-                print('name=', name)
-                print('url:', url)
                 self.urls.append(url)
                 self.names.append(Utils.str_encode(name))
             self['info'].setText(_('Please select ...'))
@@ -3245,13 +3200,6 @@ class OpenPicons(Screen):
         self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
-
-    # def downloadProgress(self, recvbytes, totalbytes):
-        # self["progress"].show()
-        # self['info'].setText(_('Download...'))
-        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
-        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
-        # print('progress = ok')
 
     def showError(self):
         print("download error ")
@@ -3311,7 +3259,7 @@ class OpenPicons(Screen):
                 info = 'Successfully Picons Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
-       
+
 def autostart(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
@@ -3328,17 +3276,13 @@ def autostart(reason, session=None, **kwargs):
                 os.system("ln -sf /usr/bin /var/bin")
                 os.system("ln -sf /usr/keys /var/keys")
                 os.system("ln -sf /usr/scce /var/scce")
-                # os.system("ln -sf /usr/camscript /var/camscript")
                 os.system("sleep 2")
                 os.system("/etc/startcam.sh")
-                # script = '/etc/startcam.sh'
-                # import subprocess
-                # subprocess.check_output(['bash', script])
                 print("*** running startcam ***")
             except:
                 print('except autostart')
             os.system('sleep 2')
-                
+
         else:
             print('pass autostart')
     return
@@ -3350,11 +3294,13 @@ def main(session, **kwargs):
     except:
         pass
 
+
 def cfgmain(menuid, **kwargs):
     if menuid == 'mainmenu':
         return [(_('Nss Addons'), main, 'Nss Addon', 4)]
     else:
         return []
+
 
 def cfgcam(menuid, **kwargs):
     if menuid == 'cam':

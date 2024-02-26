@@ -14,13 +14,14 @@ from Screens.Console import Console
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.LoadPixmap import LoadPixmap
+from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from enigma import eListboxPythonMultiContent, gFont
 from enigma import eTimer, RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import getDesktop
-import os
+from Components.Sources.StaticText import StaticText
+import os, sys
 from .lib.GetEcmInfo import GetEcmInfo
-
-
+global BlueAction
 screenwidth = getDesktop(0).size()
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/'
 cccaminfo = False
@@ -101,19 +102,21 @@ class NSSCamsManager(Screen):
                                                        'menu': self.confignss,
                                                        'green': self.action,
                                                        'yellow': self.stardown,
-                                                       'blue': self.messagekd,
+                                                       'blue': self.ppanelShortcut,
+                                                       # 'blue': self.messagekd,
                                                        'red': self.stop,
                                                        })
         self.CCcam = False
         self['key_red'] = Button(_('Stop'))
         self['key_green'] = Button(_('Start/Restart'))
         self['key_yellow'] = Button(_('Download'))
-        self['key_blue'] = Button(_('Softcam'))
+        self['key_blue'] = Button('Softcam')
         os.system('ln -sf /usr/keys /var/keys')
         self.lastCam = self.readCurrent()
-        self['info'] = Label()
+        self['info'] = Label('')
         self['ecm'] = Label('')
         self['list'] = DCCMenu(self.softcamlist)
+        BlueAction = 'SOFTCAM'
         self.readScripts()
         # self.setTitle(title_plug)
         self.EcmInfoPollTimer = eTimer()
@@ -123,7 +126,8 @@ class NSSCamsManager(Screen):
             self.EcmInfoPollTimer.callback.append(self.setEcmInfo)
         self.EcmInfoPollTimer.start(200)
         self.onShown.append(self.ecm)
-        self.onShown.append(self.openCCcamInfo)
+        self.onShown.append(self.blueButton)
+        # self.onShown.append(self.openCCcamInfo)
         self.onHide.append(self.stopEcmInfoPollTimer)
 
     def confignss(self):
@@ -132,6 +136,58 @@ class NSSCamsManager(Screen):
 
     def messagekd(self):
         self.session.openWithCallback(self.keysdownload, MessageBox, _('Update SoftcamKeys from google search?'), MessageBox.TYPE_YESNO)
+
+    def blueButton(self):
+        global BlueAction
+        self.currCam = self.readCurrent()
+        if self.currCam and self.currCam != 'None' or self.currCam is not None:
+            print('self.currCam= 77 ', self.currCam)
+            self["key_blue"].setText("Info")
+            nim = str(self.currCam.lower())
+            if 'ccam' in nim:
+                if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
+                    BlueAction = 'CCCAMINFO'
+
+                elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
+                    from Screens.CCcamInfo import CCcamInfoMain
+                    BlueAction = 'CCCAMINFOMAIN'
+
+            elif 'oscam' in nim:
+                if os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
+                    from Screens.OScamInfo import OSCamInfo
+                    BlueAction = 'OSCAMINFO'
+
+                elif os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
+                    from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+                    BlueAction = 'OSCAMSTATUS'
+        else:
+            BlueAction = 'SOFTCAM'
+            self["key_blue"].setText("Softcam")
+
+    def ShowSoftcamCallback(self):
+        pass
+
+    def ppanelShortcut(self):
+        if BlueAction == 'CCCAMINFO':
+            if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
+                from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
+                self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
+
+        elif BlueAction == 'CCCAMINFOMAIN':
+            from Screens.CCcamInfo import CCcamInfoMain
+            self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
+
+        elif BlueAction == 'OSCAMSTATUS':
+            if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
+                from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+                self.session.openWithCallback(self.ShowSoftcamCallback, OscamStatus)
+
+        elif BlueAction == 'OSCAMINFO':
+            from Screens.OScamInfo import OSCamInfo
+            self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
+        else:
+            BlueAction == 'SOFTCAM'
+            self.messagekd()
 
     def keysdownload(self, result):
         if result:
@@ -194,23 +250,8 @@ class NSSCamsManager(Screen):
         self.lastCam = self.readCurrent()
         self.ecm()
         self.setTitle(title_plug)
-        self.openCCcamInfo()
-
-    def showcccaminfo(self):
-        try:
-            if 'cccam' in self.lastCam.lower():
-                self.session.openWithCallback(CCcamInfoMain)
-        except:
-            pass
-
-    def openCCcamInfo(self):
-        try:
-            if 'cccam' in self.lastCam.lower():
-                self.CCcam = True
-            else:
-                self.CCcam = False
-        except:
-            self.CCcam = False
+        # self.openCCcamInfo()
+        self.blueButton()
 
     def openTest(self):
         pass
@@ -386,7 +427,7 @@ class NSSCamsManager(Screen):
         if sys.version_info[0] == 3:
             myfile2 = open('/etc/autocam2.txt', 'w', encoding='UTF-8')
         else:
-            myfile2 = open('/etc/autocam2.txt', 'w')    
+            myfile2 = open('/etc/autocam2.txt', 'w')
         icount = 0
         for line in myfile.readlines():
             if line[:-1] == self.oldService.toString():

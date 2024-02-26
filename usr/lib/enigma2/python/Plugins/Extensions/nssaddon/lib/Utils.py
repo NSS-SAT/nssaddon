@@ -62,6 +62,21 @@ if sys.version_info >= (2, 7, 9):
         sslContext = None
 
 
+def getEncodedString(value):
+	returnValue = ""
+	try:
+		returnValue = value.encode("utf-8", 'ignore')
+	except UnicodeDecodeError:
+		try:
+			returnValue = value.encode("iso8859-1", 'ignore')
+		except UnicodeDecodeError:
+			try:
+				returnValue = value.decode("cp1252").encode("utf-8")
+			except UnicodeDecodeError:
+				returnValue = "n/a"
+	return returnValue
+
+
 def ensure_str(text, encoding='utf-8', errors='strict'):
     if type(text) is str:
         return text
