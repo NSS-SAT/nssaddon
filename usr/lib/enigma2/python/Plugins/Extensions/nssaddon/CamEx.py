@@ -10,7 +10,7 @@ from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Screens.Console import Console
+# from Screens.Console import Console
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools.LoadPixmap import LoadPixmap
@@ -18,17 +18,39 @@ from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from enigma import eListboxPythonMultiContent, gFont
 from enigma import eTimer, RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import getDesktop
-from Components.Sources.StaticText import StaticText
-import os, sys
+# from Components.Sources.StaticText import StaticText
+import os
+import sys
 from .lib.GetEcmInfo import GetEcmInfo
 global BlueAction
+# BlueAction = 'SOFTCAM'
 screenwidth = getDesktop(0).size()
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/'
 cccaminfo = False
+# BlueAction = 'SOFTCAM'
 ECM_INFO = '/tmp/ecm.info'
-currversion = '1.0.0'
+currversion = '1.0.1'
 title_plug = 'NSS Softcam Manager V. %s' % currversion
 
+try:
+    from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
+except ImportError:
+    pass
+
+try:
+    from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+except ImportError:
+    pass
+
+try:
+    from Screens.OScamInfo import OSCamInfo
+except ImportError:
+    pass
+
+try:
+    from Screens.CCcamInfo import CCcamInfoMain
+except ImportError:
+    pass
 
 def main(session, **kwargs):
     session.open(NSSCamsManager)
@@ -116,9 +138,11 @@ class NSSCamsManager(Screen):
         self['info'] = Label('')
         self['ecm'] = Label('')
         self['list'] = DCCMenu(self.softcamlist)
-        BlueAction = 'SOFTCAM'
         self.readScripts()
         # self.setTitle(title_plug)
+        global BlueAction
+        BlueAction = 'CCCAMINFO'
+        self.blueButton()
         self.EcmInfoPollTimer = eTimer()
         try:
             self.EcmInfoPollTimer_conn = self.EcmInfoPollTimer.timeout.connect(self.setEcmInfo)
@@ -140,54 +164,88 @@ class NSSCamsManager(Screen):
     def blueButton(self):
         global BlueAction
         self.currCam = self.readCurrent()
-        if self.currCam and self.currCam != 'None' or self.currCam is not None:
-            print('self.currCam= 77 ', self.currCam)
-            self["key_blue"].setText("Info")
-            nim = str(self.currCam.lower())
-            if 'ccam' in nim:
-                if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
-                    BlueAction = 'CCCAMINFO'
+        # if self.currCam and self.currCam != 'None' or self.currCam is not None:
+        print('self.currCam= 77 ', self.currCam)
+        self["key_blue"].setText("Info")
+        nim = str(self.currCam.lower())
+        if 'ccam' in nim:
+            if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
+                BlueAction = 'CCCAMINFO'
+                self["key_blue"].setText("CCCAMINFO")
 
-                elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
-                    from Screens.CCcamInfo import CCcamInfoMain
-                    BlueAction = 'CCCAMINFOMAIN'
+            elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
+                # from Screens.CCcamInfo import CCcamInfoMain
+                BlueAction = 'CCCAMINFOMAIN'
+                self["key_blue"].setText("CCCAMINFO")
 
-            elif 'oscam' in nim:
-                if os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
-                    from Screens.OScamInfo import OSCamInfo
-                    BlueAction = 'OSCAMINFO'
+            elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyo'):
+                # from Screens.CCcamInfo import CCcamInfoMain
+                BlueAction = 'CCCAMINFOMAIN'
+                self["key_blue"].setText("CCCAMINFO")
 
-                elif os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
-                    from Plugins.Extensions.OscamStatus.plugin import OscamStatus
-                    BlueAction = 'OSCAMSTATUS'
+        elif 'oscam' in nim:
+            if os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
+                # from Screens.OScamInfo import OSCamInfo
+                BlueAction = 'OSCAMINFO'
+                self["key_blue"].setText("OSCAMINFO")
+
+            elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyo'):
+                # from Screens.OScamInfo import OSCamInfo
+                BlueAction = 'OSCAMINFO'
+                self["key_blue"].setText("OSCAMINFO")
+
+            elif os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
+                # from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+                BlueAction = 'OSCAMSTATUS'
+                self["key_blue"].setText("OSCAMSTATUS")
+        # else:
+            # return
         else:
             BlueAction = 'SOFTCAM'
             self["key_blue"].setText("Softcam")
+        print('Blue=', BlueAction)
 
     def ShowSoftcamCallback(self):
         pass
 
     def ppanelShortcut(self):
+        
+		# if "oscam" in config.misc.softcams.value.lower():
+			# self.session.open(OSCamInfo)
+		# elif "cccam" in config.misc.softcams.value.lower():  # and isfile('/usr/lib/enigma2/python/Screens/CCcamInfo.py'):
+			# from Screens.CCcamInfo import CCcamInfoMain
+			# self.session.open(CCcamInfoMain)
+		# elif isfile(ppanelFilename) and isPluginInstalled("PPanel"):
+			# from Plugins.Extensions.PPanel.ppanel import PPanel
+			# self.session.open(PPanel, name="%s PPanel" % config.misc.softcams.value, node=None, filename=ppanelFilename, deletenode=None)
+
+        
+        print('ppanelShortcut Blue=', BlueAction)
+        if BlueAction == 'SOFTCAM':
+            self.messagekd()
+
         if BlueAction == 'CCCAMINFO':
             if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
                 from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
                 self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
 
-        elif BlueAction == 'CCCAMINFOMAIN':
+        if BlueAction == 'CCCAMINFOMAIN':
             from Screens.CCcamInfo import CCcamInfoMain
-            self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
+            # self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
+            self.session.open(CCcamInfoMain)
 
-        elif BlueAction == 'OSCAMSTATUS':
+        if BlueAction == 'OSCAMSTATUS':
             if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
                 from Plugins.Extensions.OscamStatus.plugin import OscamStatus
-                self.session.openWithCallback(self.ShowSoftcamCallback, OscamStatus)
+                # self.session.openWithCallback(self.ShowSoftcamCallback, OscamStatus)
+                self.session.open(OscamStatus)
 
-        elif BlueAction == 'OSCAMINFO':
+        if BlueAction == 'OSCAMINFO':
             from Screens.OScamInfo import OSCamInfo
-            self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
+            # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
+            self.session.open(OSCamInfo)
         else:
-            BlueAction == 'SOFTCAM'
-            self.messagekd()
+            return
 
     def keysdownload(self, result):
         if result:
@@ -290,26 +348,22 @@ class NSSCamsManager(Screen):
                 self.cmd1 = '/usr/script/cam/' + self.sclist[var] + ' cam_up &'
                 os.system(self.cmd1)
         else:
-            # try:
             self.cmd1 = '/usr/script/cam/' + self.sclist[var] + ' cam_up &'
             os.system(self.cmd1)
             os.system('sleep 3')
-            # except:
-                # self.refresh
-                # return
 
         if last != var:
             try:
                 self.lastCam = self['list'].l.getCurrentSelection()[1][7]
                 self.writeFile()
             except:
-                self.refresh
+                self.refresh()
                 return
 
         print(self.cmd1)
         self.readScripts()
         self.session.nav.playService(self.oldService)
-        self.refresh
+        self.refresh()
         return
 
     def writeFile(self):
