@@ -107,6 +107,7 @@ class NSSCamsManager(Screen):
     def __init__(self, session, args=0):
         self.session = session
         Screen.__init__(self, session)
+        global _session, BlueAction                           
         self.skin = NSSCamsManager.skin
         self.index = 0
         self.sclist = []
@@ -140,8 +141,7 @@ class NSSCamsManager(Screen):
         self['list'] = DCCMenu(self.softcamlist)
         self.readScripts()
         # self.setTitle(title_plug)
-        global BlueAction
-        BlueAction = 'CCCAMINFO'
+        BlueAction = 'SOFTCAM'
         self.blueButton()
         self.EcmInfoPollTimer = eTimer()
         try:
@@ -166,40 +166,42 @@ class NSSCamsManager(Screen):
         self.currCam = self.readCurrent()
         # if self.currCam and self.currCam != 'None' or self.currCam is not None:
         print('self.currCam= 77 ', self.currCam)
-        self["key_blue"].setText("Info")
-        nim = str(self.currCam.lower())
-        if 'ccam' in nim:
-            if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
-                BlueAction = 'CCCAMINFO'
-                self["key_blue"].setText("CCCAMINFO")
+        self["key_blue"].setText("Softcam")
+        if self.currCam != None:
+            nim = str(self.currCam.lower())
+            if 'ccam' in nim:
+                if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
+                    BlueAction = 'CCCAMINFO'
+                    self["key_blue"].setText("CCCAMINFO")
 
-            elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
-                # from Screens.CCcamInfo import CCcamInfoMain
-                BlueAction = 'CCCAMINFOMAIN'
-                self["key_blue"].setText("CCCAMINFO")
+                elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
+                    # from Screens.CCcamInfo import CCcamInfoMain
+                    BlueAction = 'CCCAMINFOMAIN'
+                    self["key_blue"].setText("CCCAMINFO")
 
-            elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyo'):
-                # from Screens.CCcamInfo import CCcamInfoMain
-                BlueAction = 'CCCAMINFOMAIN'
-                self["key_blue"].setText("CCCAMINFO")
+                elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyo'):
+                    # from Screens.CCcamInfo import CCcamInfoMain
+                    BlueAction = 'CCCAMINFOMAIN'
+                    self["key_blue"].setText("CCCAMINFO")
 
-        elif 'oscam' in nim:
-            if os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
-                # from Screens.OScamInfo import OSCamInfo
-                BlueAction = 'OSCAMINFO'
-                self["key_blue"].setText("OSCAMINFO")
+            elif 'oscam' in nim:
+                if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
+                    # from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+                    BlueAction = 'OSCAMSTATUS'
+                    self["key_blue"].setText("OSCAMSTATUS")
 
-            elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyo'):
-                # from Screens.OScamInfo import OSCamInfo
-                BlueAction = 'OSCAMINFO'
-                self["key_blue"].setText("OSCAMINFO")
+                elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
+                    # from Screens.OScamInfo import OSCamInfo
+                    BlueAction = 'OSCAMINFO'
+                    self["key_blue"].setText("OSCAMINFO")
 
-            elif os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
-                # from Plugins.Extensions.OscamStatus.plugin import OscamStatus
-                BlueAction = 'OSCAMSTATUS'
-                self["key_blue"].setText("OSCAMSTATUS")
-        # else:
-            # return
+                elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyo'):
+                    # from Screens.OScamInfo import OSCamInfo
+                    BlueAction = 'OSCAMINFO'
+                    self["key_blue"].setText("OSCAMINFO")
+            # else:
+                # BlueAction = 'SOFTCAM'
+                # self["key_blue"].setText("Softcam")
         else:
             BlueAction = 'SOFTCAM'
             self["key_blue"].setText("Softcam")
@@ -209,17 +211,11 @@ class NSSCamsManager(Screen):
         pass
 
     def ppanelShortcut(self):
-        
 		# if "oscam" in config.misc.softcams.value.lower():
 			# self.session.open(OSCamInfo)
 		# elif "cccam" in config.misc.softcams.value.lower():  # and isfile('/usr/lib/enigma2/python/Screens/CCcamInfo.py'):
 			# from Screens.CCcamInfo import CCcamInfoMain
 			# self.session.open(CCcamInfoMain)
-		# elif isfile(ppanelFilename) and isPluginInstalled("PPanel"):
-			# from Plugins.Extensions.PPanel.ppanel import PPanel
-			# self.session.open(PPanel, name="%s PPanel" % config.misc.softcams.value, node=None, filename=ppanelFilename, deletenode=None)
-
-        
         print('ppanelShortcut Blue=', BlueAction)
         if BlueAction == 'SOFTCAM':
             self.messagekd()
@@ -368,10 +364,18 @@ class NSSCamsManager(Screen):
 
     def writeFile(self):
         if self.lastCam is not None:
-            clist = open('/etc/clist.list', 'w')
+            # clist = open('/etc/clist.list', 'w')
+            if sys.version_info[0] == 3:
+                clist = open('/etc/clist.list', 'w', encoding='UTF-8')
+            else:
+                clist = open('/etc/clist.list', 'w')
             clist.write(self.lastCam)
             clist.close()
-        stcam = open('/etc/startcam.sh', 'w')
+        # stcam = open('/etc/startcam.sh', 'w')
+        if sys.version_info[0] == 3:
+            stcam = open('/etc/startcam.sh', 'w', encoding='UTF-8')
+        else:
+            stcam = open('/etc/startcam.sh', 'w')
         stcam.write('#!/bin/sh\n' + self.cmd1)
         stcam.close()
         self.cmd2 = 'chmod 755 /etc/startcam.sh &'
@@ -430,9 +434,13 @@ class NSSCamsManager(Screen):
         return
 
     def readCurrent(self):
-        lastcam = ''
+        lastcam = None
         try:
-            clist = open('/etc/clist.list', 'r')
+            # clist = open('/etc/clist.list', 'r')
+            if sys.version_info[0] == 3:
+                clist = open('/etc/clist.list', 'r', encoding='UTF-8')
+            else:
+                clist = open('/etc/clist.list', 'r')
         except:
             return
 
@@ -446,7 +454,11 @@ class NSSCamsManager(Screen):
     def autocam(self):
         current = None
         try:
-            clist = open('/etc/clist.list', 'r')
+            # clist = open('/etc/clist.list', 'r')
+            if sys.version_info[0] == 3:
+                clist = open('/etc/clist.list', 'r', encoding='UTF-8')
+            else:
+                clist = open('/etc/clist.list', 'r')
             print('found list')
         except:
             return
@@ -458,10 +470,16 @@ class NSSCamsManager(Screen):
             clist.close()
         print('current =', current)
         if os.path.isfile('/etc/autocam.txt') is False:
-            alist = open('/etc/autocam.txt', 'w')
+            if sys.version_info[0] == 3:
+                alist = open('/etc/autocam.txt', 'w', encoding='UTF-8')
+            else:
+                alist = open('/etc/autocam.txt', 'w')
             alist.close()
         self.cleanauto()
-        alist = open('/etc/autocam.txt', 'a')
+        if sys.version_info[0] == 3:
+            alist = open('/etc/autocam.txt', 'a', encoding='UTF-8')
+        else:
+            alist = open('/etc/autocam.txt', 'a')
         alist.write(self.oldService.toString() + '\n')
         last = self.getLastIndex()
         alist.write(current + '\n')
