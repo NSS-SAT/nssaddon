@@ -52,6 +52,7 @@ try:
 except ImportError:
     pass
 
+
 def main(session, **kwargs):
     session.open(NSSCamsManager)
 
@@ -107,7 +108,7 @@ class NSSCamsManager(Screen):
     def __init__(self, session, args=0):
         self.session = session
         Screen.__init__(self, session)
-        global _session, BlueAction                           
+        global _session, BlueAction
         self.skin = NSSCamsManager.skin
         self.index = 0
         self.sclist = []
@@ -167,7 +168,7 @@ class NSSCamsManager(Screen):
         # if self.currCam and self.currCam != 'None' or self.currCam is not None:
         print('self.currCam= 77 ', self.currCam)
         self["key_blue"].setText("Softcam")
-        if self.currCam != None:
+        if self.currCam and self.currCam is not None or self.currCam != '':
             nim = str(self.currCam.lower())
             if 'ccam' in nim:
                 if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
@@ -199,9 +200,6 @@ class NSSCamsManager(Screen):
                     # from Screens.OScamInfo import OSCamInfo
                     BlueAction = 'OSCAMINFO'
                     self["key_blue"].setText("OSCAMINFO")
-            # else:
-                # BlueAction = 'SOFTCAM'
-                # self["key_blue"].setText("Softcam")
         else:
             BlueAction = 'SOFTCAM'
             self["key_blue"].setText("Softcam")
@@ -211,11 +209,11 @@ class NSSCamsManager(Screen):
         pass
 
     def ppanelShortcut(self):
-		# if "oscam" in config.misc.softcams.value.lower():
-			# self.session.open(OSCamInfo)
-		# elif "cccam" in config.misc.softcams.value.lower():  # and isfile('/usr/lib/enigma2/python/Screens/CCcamInfo.py'):
-			# from Screens.CCcamInfo import CCcamInfoMain
-			# self.session.open(CCcamInfoMain)
+        # if "oscam" in config.misc.softcams.value.lower():
+            # self.session.open(OSCamInfo)
+        # elif "cccam" in config.misc.softcams.value.lower():  # and isfile('/usr/lib/enigma2/python/Screens/CCcamInfo.py'):
+            # from Screens.CCcamInfo import CCcamInfoMain
+            # self.session.open(CCcamInfoMain)
         print('ppanelShortcut Blue=', BlueAction)
         if BlueAction == 'SOFTCAM':
             self.messagekd()
@@ -237,9 +235,14 @@ class NSSCamsManager(Screen):
                 self.session.open(OscamStatus)
 
         if BlueAction == 'OSCAMINFO':
-            from Screens.OScamInfo import OSCamInfo
-            # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
-            self.session.open(OSCamInfo)
+            try:
+                from Screens.OScamInfo import OSCamInfo
+                # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
+                self.session.open(OSCamInfo)
+            except ImportError:
+                from Screens.OScamInfo import OscamInfoMenu
+                # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
+                self.session.open(OscamInfoMenu) 
         else:
             return
 
