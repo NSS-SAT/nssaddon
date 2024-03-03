@@ -2353,6 +2353,7 @@ class NssRemove(Screen):
                                      'ColorActions'], {'green': self.message1,
                                                        'ok': self.message1,
                                                        'yellow': self.msgipkrst,
+                                                       'blue': self.scriptrun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -1)
         self.onLayoutFinish.append(self.getfreespace)
@@ -2363,6 +2364,9 @@ class NssRemove(Screen):
     def runFinished(self, retval):
         self['pth'].setText(_('Addons Packege removed successfully.'))
         self.getfreespace()
+
+    def scriptrun(self):
+        self.session.open(ScriptExecuter)
 
     def cancel(self):
         if not self.container.running():

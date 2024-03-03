@@ -33,7 +33,6 @@ import subprocess
 import codecs
 global skin_path
 import base64
-# import wget
 sss = 'aHR0cHM6Ly9wYXN0ZWJpbi5jb20vcmF3L1U0ZU02RGpW'
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -88,16 +87,6 @@ except AttributeError:
     pass
 else:
     ssl._create_default_https_context = _create_unverified_https_context
-
-
-# def getDesktopSize():
-    # from enigma import getDesktop
-    # s = getDesktop(0).size()
-    # return (s.width(), s.height())
-
-# def isFHD():
-    # desktopSize = getDesktopSize()
-    # return desktopSize[0] == 1920
 
 
 def checkStr(txt):
@@ -373,8 +362,10 @@ class cccConfig(Screen, ConfigListScreen):
                     if not os.path.exists('/tmp/emm.txt'):
                         # import wget
                         outp = base64.b64decode(sss)
-                        url = str(outp)
-                        wget.download(url, '/tmp/emm.txt')
+                        # url = str(outp)
+                        cmmnd = "wget --no-check-certificate -U 'Enigma2 - tvmanager Plugin' -c 'https://pastebin.com/raw/U4eM6DjV' -O '/tmp/emm.txt'"
+                        # wget.download(url, '/tmp/emm.txt')
+                        os.system(cmmnd)
                     if os.path.exists('/tmp/emm.txt'):
                         msg.append(_("READ EMM....\n"))
                         with open('/tmp/emm.txt') as f:

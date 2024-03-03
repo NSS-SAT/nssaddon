@@ -19,7 +19,10 @@ from enigma import eListboxPythonMultiContent, gFont
 from enigma import eTimer, RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import getDesktop
 # from Components.Sources.StaticText import StaticText
+
 import os
+
+
 import sys
 from .lib.GetEcmInfo import GetEcmInfo
 global BlueAction
@@ -31,7 +34,9 @@ cccaminfo = False
 ECM_INFO = '/tmp/ecm.info'
 currversion = '1.0.1'
 title_plug = 'NSS Softcam Manager V. %s' % currversion
-
+if not os.path.exists('/etc/clist.list'):
+    with open('/etc/clist.list', 'w'):
+        print('/etc/clist.list as been create')
 try:
     from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
 except ImportError:
@@ -52,7 +57,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from Screens.OScamInfo import OscamInfoMenu
+except ImportError:
+    pass
 
+                
 def main(session, **kwargs):
     session.open(NSSCamsManager)
 
@@ -80,7 +90,6 @@ def DreamCCExtra(name, index, isActive=False):
     else:
         png = LoadPixmap(plugin_path + 'res/pics/off.png')
     res = [index]
-
     res.append((eListboxPythonMultiContent.TYPE_TEXT, 90, 0, 900, 40, 0, RT_HALIGN_LEFT | RT_VALIGN_CENTER, name))
     res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST, 5, 3, 70, 40, png))
     return res
@@ -169,35 +178,30 @@ class NSSCamsManager(Screen):
         print('self.currCam= 77 ', self.currCam)
         self["key_blue"].setText("Softcam")
         if self.currCam and self.currCam is not None or self.currCam != '':
-            nim = str(self.currCam.lower())
-            if 'ccam' in nim:
+            nim = str(self.currCam)
+            if 'ccam' in nim.lower():
                 if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/CCcamInfo")):
                     BlueAction = 'CCCAMINFO'
                     self["key_blue"].setText("CCCAMINFO")
 
                 elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyc'):
-                    # from Screens.CCcamInfo import CCcamInfoMain
                     BlueAction = 'CCCAMINFOMAIN'
                     self["key_blue"].setText("CCCAMINFO")
 
                 elif os.path.exists('/usr/lib/enigma2/python/Screens/CCcamInfo.pyo'):
-                    # from Screens.CCcamInfo import CCcamInfoMain
                     BlueAction = 'CCCAMINFOMAIN'
                     self["key_blue"].setText("CCCAMINFO")
 
-            elif 'oscam' in nim:
+            elif 'oscam' in nim.lower():
                 if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
-                    # from Plugins.Extensions.OscamStatus.plugin import OscamStatus
                     BlueAction = 'OSCAMSTATUS'
                     self["key_blue"].setText("OSCAMSTATUS")
 
                 elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyc'):
-                    # from Screens.OScamInfo import OSCamInfo
                     BlueAction = 'OSCAMINFO'
                     self["key_blue"].setText("OSCAMINFO")
 
                 elif os.path.exists('/usr/lib/enigma2/python/Screens/OScamInfo.pyo'):
-                    # from Screens.OScamInfo import OSCamInfo
                     BlueAction = 'OSCAMINFO'
                     self["key_blue"].setText("OSCAMINFO")
         else:
@@ -225,24 +229,20 @@ class NSSCamsManager(Screen):
 
         if BlueAction == 'CCCAMINFOMAIN':
             from Screens.CCcamInfo import CCcamInfoMain
-            # self.session.openWithCallback(self.ShowSoftcamCallback, CCcamInfoMain)
             self.session.open(CCcamInfoMain)
 
         if BlueAction == 'OSCAMSTATUS':
             if os.path.exists(resolveFilename(SCOPE_PLUGINS, "Extensions/OscamStatus")):
                 from Plugins.Extensions.OscamStatus.plugin import OscamStatus
-                # self.session.openWithCallback(self.ShowSoftcamCallback, OscamStatus)
                 self.session.open(OscamStatus)
 
         if BlueAction == 'OSCAMINFO':
             try:
                 from Screens.OScamInfo import OSCamInfo
-                # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
                 self.session.open(OSCamInfo)
             except ImportError:
                 from Screens.OScamInfo import OscamInfoMenu
-                # self.session.openWithCallback(self.ShowSoftcamCallback, OSCamInfo)
-                self.session.open(OscamInfoMenu) 
+                self.session.open(OscamInfoMenu)
         else:
             return
 
@@ -366,7 +366,7 @@ class NSSCamsManager(Screen):
         return
 
     def writeFile(self):
-        if self.lastCam is not None:
+        if self.lastCam != '' or self.lastCam is not None:
             # clist = open('/etc/clist.list', 'w')
             if sys.version_info[0] == 3:
                 clist = open('/etc/clist.list', 'w', encoding='UTF-8')
@@ -446,12 +446,11 @@ class NSSCamsManager(Screen):
                 clist = open('/etc/clist.list', 'r')
         except:
             return
-
-        if clist is not None:
-            for line in clist:
-                lastcam = line
-
-            clist.close()
+        if os.stat('/etc/clist.list').st_size > 0:
+            if clist is not None:
+                for line in clist:
+                    lastcam = line
+                clist.close()
         return lastcam
 
     def autocam(self):
@@ -484,7 +483,7 @@ class NSSCamsManager(Screen):
         else:
             alist = open('/etc/autocam.txt', 'a')
         alist.write(self.oldService.toString() + '\n')
-        last = self.getLastIndex()
+        # last = self.getLastIndex()
         alist.write(current + '\n')
         alist.close()
         self.session.openWithCallback(self.callback, MessageBox, _('Autocam assigned to the current channel'), type=1, timeout=10)
