@@ -3,15 +3,16 @@
 
 # --------------------#
 #   coded by Lululla  #
-#      24/11/2023     #
+#    skin by MMark    #
+#      22/09/2023     #
 # --------------------#
-# imported from tvAddon Panel
+# Info http://t.me/tivustream
 from __future__ import print_function
-from . import _
-from .lib import Utils
-from .lib.Utils import RequestAgent
-from .lib.Lcn import LCN
-from .lib.Downloader import downloadWithProgress
+from . import _, paypal
+from . import Utils
+from .Utils import RequestAgent
+from .Lcn import LCN
+from .Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
@@ -23,7 +24,7 @@ from Components.MultiContent import MultiContentEntryText
 from Components.MultiContent import MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap
 from Components.ProgressBar import ProgressBar
-from Components.Sources.List import List
+# from Components.ScrollLabel import ScrollLabel
 from Components.Sources.Progress import Progress
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
@@ -36,13 +37,13 @@ from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.Directories import SCOPE_PLUGINS
 from Tools.Directories import fileExists, resolveFilename
 # from Tools.Downloader import downloadWithProgress
+# from Screens.Processing import Processing
 from enigma import RT_HALIGN_LEFT, RT_VALIGN_CENTER
 from enigma import loadPNG, gFont
 from enigma import eTimer
 from enigma import getDesktop
 from enigma import eListboxPythonMultiContent, eConsoleAppContainer
 from os import chmod
-from os import listdir, mkdir
 from twisted.web.client import downloadPage, getPage
 import codecs
 import os
@@ -53,8 +54,6 @@ import ssl
 import glob
 import six
 import subprocess
-
-
 global skin_path, mmkpicon, set, category
 
 
@@ -110,7 +109,7 @@ def status_site():
     global status
     import requests
     try:
-        Host = 'https://www.nonsolosat.net'
+        Host = 'http://patbuweb.com/uppy/'
         # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
         response = requests.get(Host, verify=False, timeout=5)
         if response.status_code == 200:
@@ -125,48 +124,16 @@ def status_site():
     return status
 
 
-def checkMyFile(url):
-    return []
-    myfile = None
-    try:
-        req = Request(url)
-        req.add_header('User-Agent', RequestAgent())
-        # req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14')
-        req.add_header('Referer', 'https://www.mediafire.com')
-        req.add_header('X-Requested-With', 'XMLHttpRequest')
-        page = urlopen(req)
-        r = page.read()
-        # if PY3:
-            # n1 = r.find('"download_link'.encode(), 0)
-            # n2 = r.find('downloadButton'.encode(), n1)
-        # else:
-            # n1 = r.find('"download_link', 0)
-            # n2 = r.find('downloadButton', n1)
-        n1 = r.find('"download_link', 0)
-        n2 = r.find('downloadButton', n1)
-        r2 = r[n1:n2]
-        regexcat = 'href="https://download(.*?)"'
-        match = re.compile(regexcat, re.DOTALL).findall(r2)
-        myfile = match[0]
-    except:
-        e = URLError
-        if hasattr(e, 'code'):
-            print('We failed with error code - %s.' % e.code)
-        if hasattr(e, 'reason'):
-            print('Reason: ', e.reason)
-    return myfile
-
-
-def make_req(url):
+def make_request(url):
     try:
         import requests
         response = requests.get(url, verify=False, timeout=5)
         if response.status_code == 200:
-            link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=15, verify=False, stream=True).text
+            link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=10, verify=False, stream=True).text
         return link
     except ImportError:
         req = Request(url)
-        req.add_header('User-Agent', 'E2 Plugin nss Panel')
+        req.add_header('User-Agent', 'E2 Plugin Lululla')
         response = urlopen(req, None, 10)
         link = response.read().decode('utf-8')
         response.close()
@@ -174,7 +141,7 @@ def make_req(url):
     return
 
 
-def check_gzip(url):
+def checkGZIP(url):
     from io import StringIO
     import gzip
     hdr = {"User-Agent": RequestAgent()}
@@ -232,31 +199,36 @@ def mountipkpth():
 AgentRequest = RequestAgent()
 # ================config
 global set
-config.plugins.nssaddon = ConfigSubsection()
-config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
-config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
-config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
-config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
-mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
-currversion = '1.0.0'
-title_plug = 'NSS Addon Panel V. %s' % currversion
-name_plug = 'NSS Addon Panel'
-name_cam = 'NSS Softcam Manager'
+config.plugins.tvaddon = ConfigSubsection()
+cfg = config.plugins.tvaddon
+
+cfg.strtext = ConfigYesNo(default=True)
+cfg.mmkpicon = ConfigDirectory(default='/media/hdd/picon/')
+cfg.strtmain = ConfigYesNo(default=True)
+cfg.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
+cfg.autoupd = ConfigYesNo(default=False)
+mmkpicon = cfg.mmkpicon.value.strip()
+currversion = '2.1.4'
+title_plug = '..:: TiVuStream Addons Panel V. %s ::..' % currversion
+name_plug = 'TiVuStream Addon Panel'
 category = 'lululla.xml'
 set = 0
 pblk = 'aHR0cHM6Ly93d3cubWVkaWFmaXJlLmNvbS9hcGkvMS41L2ZvbGRlci9nZXRfY29udGVudC5waHA/Zm9sZGVyX2tleT1vdnowNG1ycHpvOXB3JmNvbnRlbnRfdHlwZT1mb2xkZXJzJmNodW5rX3NpemU9MTAwMCZyZXNwb25zZV9mb3JtYXQ9anNvbg== '
 ptrs = 'aHR0cHM6Ly93d3cubWVkaWFmaXJlLmNvbS9hcGkvMS41L2ZvbGRlci9nZXRfY29udGVudC5waHA/Zm9sZGVyX2tleT10dmJkczU5eTlocjE5JmNvbnRlbnRfdHlwZT1mb2xkZXJzJmNodW5rX3NpemU9MTAwMCZyZXNwb25zZV9mb3JtYXQ9anNvbg== '
 ptmov = 'aHR0cHM6Ly93d3cubWVkaWFmaXJlLmNvbS9hcGkvMS41L2ZvbGRlci9nZXRfY29udGVudC5waHA/Zm9sZGVyX2tleT1uazh0NTIyYnY0OTA5JmNvbnRlbnRfdHlwZT1maWxlcyZjaHVua19zaXplPTEwMDAmcmVzcG9uc2VfZm9ybWF0PWpzb24= '
-data_xml = 'aHR0cHM6Ly93d3cubm9uc29sb3NhdC5uZXQveG1sLw=='
+data_upd = 'aHR0cDovL3BhdGJ1d2ViLmNvbS90dlBhbmVseHh4Lw=='
+data_xml = 'aHR0cDovL3BhdGJ1d2ViLmNvbS94bWwv'
 regexC = '<plugins cont="(.*?)"'
 regexL = 'href="(.+?)">.+?alt=.+?">(.+?)</a>.+?data.+?">(.+?)</td>'
 host_trs = Utils.b64decoder(ptrs)
 host_blk = Utils.b64decoder(pblk)
 host_mov = Utils.b64decoder(ptmov)
+upd_path = Utils.b64decoder(data_upd)
 xml_path = Utils.b64decoder(data_xml)
-plugin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
+plugin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('tvaddon'))
 ico_path = os.path.join(plugin_path, 'logo.png')
 no_cover = os.path.join(plugin_path, 'no_coverArt.png')
+res_plugin_path = os.path.join(plugin_path, 'res/')
 _firstStarttvspro = True
 ee2ldb = '/etc/enigma2/lamedb'
 ServOldLamedb = plugin_path + '/temp/ServiceListOldLamedb'
@@ -286,43 +258,46 @@ if not os.path.exists(mmkpicon):
         print(('Error creating directory %s:\n%s') % (mmkpicon, str(e)))
 
 
+Panel_deb = [
+    _('DEBIAN DREAMOS'),
+    _('DAILY PICONS'),
+    _('DAILY SETTINGS')]
+
 Panel_list = [
- _('LULULLA CORNER'),
- _('DAILY PICONS'),
- _('DAILY SETTINGS'),
- _('SETTING CHANNEL NSS'),
- _('DEPENDENCIES'),
- _('DRIVERS'),
- _('PLUGIN BACKUP'),
- _('PLUGIN EPG'),
- _('PLUGIN EMULATORS CAMS'),
- _('PLUGIN GAME'),
- _('PLUGIN MULTIBOOT'),
- _('PLUGIN MULTIMEDIA'),
- _('PLUGIN PICONS'),
- _('PLUGIN PPANEL'),
- _('PLUGIN SETTINGS PANEL'),
- _('PLUGIN SCRIPT'),
- _('PLUGIN SKINS'),
- _('PLUGIN SPORT'),
- _('PLUGIN UTILITY'),
- _('PLUGIN WEATHER')]
+    _('LULULLA CORNER'),
+    _('DAILY PICONS'),
+    _('DAILY SETTINGS'),
+    _('KODILITE BY PCD'),
+    _('DEPENDENCIES'),
+    _('DRIVERS'),
+    _('PLUGIN BACKUP'),
+    _('PLUGIN EPG'),
+    _('PLUGIN EMULATORS CAMS'),
+    _('PLUGIN GAME'),
+    _('PLUGIN MULTIBOOT'),
+    _('PLUGIN MULTIMEDIA'),
+    _('PLUGIN PICONS'),
+    _('PLUGIN PPANEL'),
+    _('PLUGIN SETTINGS PANEL'),
+    _('PLUGIN SKINS'),
+    _('PLUGIN SPORT'),
+    _('PLUGIN UTILITY'),
+    _('PLUGIN WEATHER')]
 
 Panel_list2 = [
- ('SAVE DTT BOUQUET'),
- ('RESTORE DTT BOUQUET'),
- ('UPDATE SATELLITES.XML'),
- ('UPDATE TERRESTRIAL.XML'),
- ('SETTINGS BI58'),
- ('SETTINGS CIEFP'),
- ('SETTINGS CYRUS'),
- ('SETTINGS MANUTEK'),
- # ('SETTINGS MILENKA61'),
- ('SETTINGS MORPHEUS'),
- ('SETTINGS PREDRAG'),
- ('SETTINGS VHANNIBAL'),
- ('SETTINGS VHANNIBAL 2')
-]
+    ('SAVE DTT BOUQUET'),
+    ('RESTORE DTT BOUQUET'),
+    ('UPDATE SATELLITES.XML'),
+    ('UPDATE TERRESTRIAL.XML'),
+    ('SETTINGS BI58'),
+    ('SETTINGS CIEFP'),
+    ('SETTINGS CYRUS'),
+    ('SETTINGS MANUTEK'),
+    # ('SETTINGS MILENKA61'),
+    ('SETTINGS MORPHEUS'),
+    ('SETTINGS PREDRAG'),
+    ('SETTINGS VHANNIBAL'),
+    ('SETTINGS VHANNIBAL 2')]
 
 Panel_list3 = [
  _('MMARK PICONS BLACK'),
@@ -331,7 +306,7 @@ Panel_list3 = [
  _('OPEN PICONS')]
 
 
-class nssList(MenuList):
+class tvList(MenuList):
     def __init__(self, list):
         MenuList.__init__(self, list, True, eListboxPythonMultiContent)
         if screenwidth.width() == 2560:
@@ -348,12 +323,12 @@ class nssList(MenuList):
             self.l.setFont(0, gFont('Regular', textfont))
 
 
-pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/settingoff.png".format('nssaddon'))  # ico1_path
+pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/lock_off.png".format('tvaddon'))  # ico1_path
 if status_site():
-    pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/settingon.png".format('nssaddon'))  # ico1_path
+    pngs = resolveFilename(SCOPE_PLUGINS, "Extensions/{}/res/pics/lock_on.png".format('tvaddon'))  # ico1_path
 
 
-def nssListEntry(name, idx):
+def DailyListEntry(name, idx):
     res = [name]
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
@@ -381,7 +356,7 @@ def oneListEntry(name):
     return res
 
 
-def showlistNss(data, list):
+def showlist(data, list):
     icount = 0
     plist = []
     for line in data:
@@ -391,35 +366,74 @@ def showlistNss(data, list):
         list.setList(plist)
 
 
-class HomeNss(Screen):
+class Hometv(Screen):
     def __init__(self, session):
         self.session = session
-        skin = os.path.join(skin_path, 'HomeNss.xml')
+        skin = os.path.join(skin_path, 'Hometv.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (name_plug)
+        self.setup_title = (title_plug)
         Screen.__init__(self, session)
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['key_red'] = Button(_('Exit'))
         self['key_green'] = Button(_('Extensions Installer'))
         self['key_yellow'] = Button(_('Uninstall'))
-        self["key_blue"] = Button(_("NSS Cams Manager"))
-        # self['key_blue'].hide()
+        self["key_blue"] = Button(_("tvManager"))
+        self['key_blue'].hide()
         self['info'] = Label(_('Loading data... Please wait'))
         self['statusgreen'] = Pixmap()
         self['statusgreen'].hide()
         self['statusred'] = Pixmap()
         self['statusred'].hide()
         self['status'] = Label('Please wait..')
-        self['title'] = Label(name_plug)
+        self.Update = False
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/tvManager'):
+            self["key_blue"].show()
+            self['key_blue'] = Label(_('tvManager'))
+        elif os.path.exists('/usr/lib/enigma2/python/Plugins/PLi/tvManager'):
+            self["key_blue"].show()
+            self['key_blue'] = Label(_('tvManager'))
+        self.dmlink = ''
+        self.tlink = ''
+        try:
+            fp = ''
+            destr = plugin_path + '/updatePanel.txt'
+            req = Request(upd_path + 'updatePanel.txt')
+            req.add_header('User-Agent', RequestAgent())
+            fp = Utils.str_encode(urlopen(req))
+            fp = fp.read()
+            if os.path.exists(destr):
+                with open(destr, 'w') as f:
+                    f.write(fp)
+                    f.seek(0)
+                    f.close()
+                with open(destr, 'r') as fp:
+                    # count = 0
+                    self.labeltext = ''
+                    s1 = fp.readline()
+                    s2 = fp.readline()
+                    s3 = fp.readline()
+                    s4 = fp.readline()
+                    self.version = s1.strip()
+                    self.tlink = s2.strip()
+                    self.info = s3.strip()
+                    self.dmlink = s4.strip()
+                    fp.close()
+                    # if self.version <= currversion:
+                        # self.Update = False
+                    if self.version > currversion:
+                        self.Update = True
+        except Exception as e:
+            print('error: ', str(e))
+        self['title'] = Label(_(title_plug))
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'EPGSelectActions',
                                      'MenuActions',
                                      'DirectionActions'], {'ok': self.okRun,
-                                                           'green': self.NssIPK,
+                                                           'green': self.tvIPK,
                                                            'menu': self.goConfig,
-                                                           'blue': self.NSSCamsManager,
+                                                           'blue': self.tvManager,
                                                            'yellow': self.ipkDs,
                                                            'red': self.closerm,
                                                            'back': self.closerm,
@@ -446,8 +460,8 @@ class HomeNss(Screen):
         except:
             dependencies = False
         if dependencies is False:
-            chmod("/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh", 0o0755)
-            cmd1 = "/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh"
+            chmod("/usr/lib/enigma2/python/Plugins/Extensions/tvaddon/dependencies.sh", 0o0755)
+            cmd1 = "/usr/lib/enigma2/python/Plugins/Extensions/tvaddon/dependencies.sh"
             self.session.openWithCallback(self.starts, tvConsole, title="Checking Python Dependencies", cmdlist=[cmd1], closeOnSuccess=False)
         else:
             self.starts()
@@ -461,7 +475,7 @@ class HomeNss(Screen):
         self.close()
 
     def goConfig(self):
-        self.session.open(nssConfig)
+        self.session.open(tvConfig)
 
     def updateMenuList(self):
         self.menu_list = []
@@ -469,11 +483,24 @@ class HomeNss(Screen):
             del self.menu_list[0]
         list = []
         idx = 0
-        for x in Panel_list:
-            list.append(nssListEntry(x, idx))
-            self.menu_list.append(x)
-            idx += 1
+        if os.path.exists('/var/lib/dpkg/info'):
+            for x in Panel_deb:
+                list.append(DailyListEntry(x, idx))
+                self.menu_list.append(x)
+                idx += 1
+        else:
+            for x in Panel_list:
+                list.append(DailyListEntry(x, idx))
+                self.menu_list.append(x)
+                idx += 1
         self['list'].setList(list)
+        if self.Update is True:
+            self.timer = eTimer()
+            if os.path.exists('/var/lib/dpkg/info'):
+                self.timer_conn = self.timer.timeout.connect(self.msgupdate1)
+            else:
+                self.timer.callback.append(self.msgupdate1)
+            self.timer.start(300, 1)
         self.timer2 = eTimer()
         if os.path.exists('/var/lib/dpkg/info'):
             self.timer2_conn = self.timer2.timeout.connect(self.__layoutFinished)
@@ -485,85 +512,123 @@ class HomeNss(Screen):
         self.keyNumberGlobalCB(self['list'].getSelectedIndex())
 
     def ipkDs(self):
-        self.session.open(NssRemove)
+        self.session.open(tvRemove)
 
-    def NSSCamsManager(self):
-        tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
+    def tvManager(self):
+        tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('tvManager'))
         if os.path.exists(tvman):
-            from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            self.session.openWithCallback(self.close, NSSCamsManager)
+            from Plugins.Extensions.tvManager.plugin import tvManager
+            self.session.openWithCallback(self.close, tvManager)
         else:
-            self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
+            self.session.open(MessageBox, ("tvManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
 
-    def NssIPK(self):
-        self.session.open(NssIPK)
+    def tvIPK(self):
+        self.session.open(tvIPK)
 
     def keyNumberGlobalCB(self, idx):
         global category
         sel = self.menu_list[idx]
-        if sel == _('DAILY SETTINGS'):
-            self.session.open(NssDailySetting)
-        if sel == _('SETTING CHANNEL NSS'):
-            category = 'Settingchannelnss.xml'
-            self.session.open(nssCategories, category)
         if sel == _('DAILY PICONS'):
-            self.session.open(SelectPiconz)
-        if sel == _('LULULLA CORNER'):
-            category = 'lululla.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('DRIVERS'):
-            category = 'Drivers.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('DEPENDENCIES'):
-            category = 'Dependencies.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN BACKUP'):
-            category = 'PluginBackup.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN EMULATORS CAMS'):
-            category = 'PluginEmulators.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN EPG'):
-            category = 'PluginEpg.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN GAME'):
-            category = 'PluginGame.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN MULTIBOOT'):
-            category = 'PluginMultiboot.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN MULTIMEDIA'):
-            category = 'PluginMultimedia.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN PICONS'):
-            category = 'Picons.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN PPANEL'):
-            category = 'PluginPpanel.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SCRIPT'):
-            category = 'PlugiScript.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SETTINGS PANEL'):
-            category = 'PluginSettings.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SKINS'):
-            category = 'PluginSkins.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SPORT'):
-            category = 'PluginSport.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN UTILITY'):
-            category = 'PluginUtility.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN WEATHER'):
-            category = 'PluginWeather.xml'
-            self.session.open(nssCategories, category)
+            from .mmpicon import SelectPicons
+            self.session.open(SelectPicons)
+            # self.session.open(SelectPiconz)
+        elif sel == _('DAILY SETTINGS'):
+            self.session.open(tvDailySetting)
+        elif sel == _('KODILITE BY PCD'):
+            self.session.open(mainkodilite)
         else:
+            if sel == _('LULULLA CORNER'):
+                category = 'lululla.xml'
+                self.session.open(Categories, category)
+            if sel == _('DEBIAN DREAMOS'):
+                category = 'debian.xml'
+                self.session.open(Categories, category)
+            if sel == _('DRIVERS'):
+                category = 'Drivers.xml'
+                self.session.open(Categories, category)
+            if sel == _('DEPENDENCIES'):
+                category = 'Dependencies.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN BACKUP'):
+                category = 'PluginBackup.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN EMULATORS CAMS'):
+                category = 'PluginEmulators.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN EPG'):
+                category = 'PluginEpg.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN GAME'):
+                category = 'PluginGame.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN MULTIBOOT'):
+                category = 'PluginMultiboot.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN MULTIMEDIA'):
+                category = 'PluginMultimedia.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN PICONS'):
+                category = 'Picons.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN PPANEL'):
+                category = 'PluginPpanel.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN SETTINGS PANEL'):
+                category = 'PluginSettings.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN SKINS'):
+                category = 'PluginSkins.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN SPORT'):
+                category = 'PluginSport.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN UTILITY'):
+                category = 'PluginUtility.xml'
+                self.session.open(Categories, category)
+            if sel == _('PLUGIN WEATHER'):
+                category = 'PluginWeather.xml'
+                self.session.open(Categories, category)
             return
 
+    def msgupdate1(self):
+        self.session.openWithCallback(self.msgupdate2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-class nssCategories(Screen):
+    def msgupdate2(self, answer):
+        if self.Update is False:
+            return
+        if cfg.autoupd.value is False:
+            return
+        if answer:
+            if os.path.exists('/var/lib/dpkg/info'):
+                com = self.dmlink
+                dom = 'New version ' + self.version
+                tvtemp = '/tmp/tvaddon.tar'
+                import requests
+                r = requests.get(com)
+                with open(tvtemp, 'wb') as f:
+                    f.write(r.content)
+                os.system('sleep 3')
+                self.session.open(tvConsole, _('Install Update: %s') % dom, ['tar -xvf /tmp/tvaddon.tar -C /'], closeOnSuccess=False)
+            else:
+                com = self.tlink
+                dom = 'New Version ' + self.version
+                self.session.open(tvConsole, _('Install Update: %s') % dom, ['opkg install %s' % com], closeOnSuccess=False)
+
+    def msgipkrst1(self):
+        self.session.openWithCallback(self.msgipkrst2, MessageBox, _("New update available!!\nDo you want update plugin ?\nPlease Reboot GUI after install!"), MessageBox.TYPE_YESNO)
+
+    def msgipkrst2(self, answer):
+        if answer:
+            epgpath = '/media/hdd/epg.dat'
+            epgbakpath = '/media/hdd/epg.dat.bak'
+            if os.path.exists(epgbakpath):
+                os.remove(epgbakpath)
+            if os.path.exists(epgpath):
+                shutil.copyfile(epgpath, epgbakpath)
+            self.session.open(TryQuitMainloop, 3)
+
+
+class Categories(Screen):
     def __init__(self, session, category):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
@@ -572,7 +637,7 @@ class nssCategories(Screen):
         self.setup_title = (category)
         Screen.__init__(self, session)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self.category = category
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
@@ -583,9 +648,16 @@ class nssCategories(Screen):
         self['key_green'] = Button(_('Extensions Installer'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button(_('Uninstall'))
-        self["key_blue"] = Button(_("NSS Softcam Manager"))
-        # self['key_blue'].hide()
+        self["key_blue"] = Button(_("tvManager"))
+        self['key_blue'].hide()
         self.Update = False
+        if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/tvManager'):
+            self["key_blue"].show()
+            self['key_blue'] = Label(_('tvManager'))
+        elif os.path.exists('/usr/lib/enigma2/python/Plugins/PLi/tvManager'):
+            self["key_blue"].show()
+            self['key_blue'] = Label(_('tvManager'))
+        self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
         if os.path.exists('/var/lib/dpkg/info'):
@@ -593,22 +665,22 @@ class nssCategories(Screen):
         else:
             self.timer.callback.append(self._gotPageLoad)
         self.timer.start(500, 1)
-        self['title'] = Label(name_plug)
+        self['title'] = Label(_(title_plug))
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions',
                                      'EPGSelectActions',
                                      'MenuActions',
                                      'DirectionActions'], {'ok': self.okRun,
-                                                           'green': self.NssIPK,
+                                                           'green': self.tvIPK,
                                                            'menu': self.goConfig,
-                                                           'blue': self.NSSCamsManager,
+                                                           'blue': self.tvManager,
                                                            'yellow': self.ipkDs,
                                                            'red': self.close,
                                                            'cancel': self.close}, -2)
 
     def _gotPageLoad(self):
         xml = str(xml_path) + self.category
-        self.xml = check_gzip(xml)
+        self.xml = checkGZIP(xml)
         try:
             match = re.compile(regexC, re.DOTALL).findall(self.xml)
             for name in match:
@@ -616,52 +688,52 @@ class nssCategories(Screen):
                 print('name: ', name)
                 self.list.append(name)
                 self['info'].setText(_('Please select ...'))
-            showlistNss(self.list, self['list'])
+            showlist(self.list, self['list'])
             self['key_green'].show()
             self.downloading = True
         except Exception as e:
             print('error: ', str(e))
 
-    def NssIPK(self):
-        self.session.open(NssIPK)
+    def tvIPK(self):
+        self.session.open(tvIPK)
 
     def ipkDs(self):
-        self.session.open(NssRemove)
+        self.session.open(tvRemove)
 
-    def NSSCamsManager(self):
-        tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
+    def tvManager(self):
+        tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('tvManager'))
         if os.path.exists(tvman):
-            from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            self.session.openWithCallback(self.close, NSSCamsManager)
+            from Plugins.Extensions.tvManager.plugin import tvManager
+            self.session.openWithCallback(self.close, tvManager)
         else:
-            self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
+            self.session.open(MessageBox, ("tvManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
 
     def goConfig(self):
-        self.session.open(nssConfig)
+        self.session.open(tvConfig)
 
     def okRun(self):
         if self.downloading is True:
             try:
                 idx = self["list"].getSelectionIndex()
                 name = self.list[idx]
-                self.session.open(NssInstall, self.xml, name)
+                self.session.open(tvInstall, self.xml, name)
             except Exception as e:
                 print('error: ', str(e))
         else:
             self.close()
 
 
-class NssDailySetting(Screen):
+class tvDailySetting(Screen):
     def __init__(self, session):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('DAILY SETTINGS')
+        self.setup_title = ('Daily Setting')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
-        self['list'] = nssList([])
-        self['title'] = Label(self.setup_title)
+        self['list'] = tvList([])
+        self['title'] = Label(_(title_plug))
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -708,7 +780,7 @@ class NssDailySetting(Screen):
         list = []
         idx = 0
         for x in Panel_list2:
-            list.append(nssListEntry(x, idx))
+            list.append(DailyListEntry(x, idx))
             self.menu_list.append(x)
             idx += 1
         self['list'].setList(list)
@@ -812,11 +884,11 @@ class SettingVhan(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Vhannibal Setting')
+        self.setup_title = ('Setting Vhannibal')
         Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(_(self.setup_title))
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
@@ -837,7 +909,7 @@ class SettingVhan(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(name_plug)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -849,7 +921,7 @@ class SettingVhan(Screen):
         self.urls = []
         try:
             urlsat = 'https://www.vhannibal.net/asd.php'
-            data = make_req(urlsat)
+            data = make_request(urlsat)
             if PY3:
                 data = six.ensure_str(data)
             match = re.compile('<td><a href="(.+?)">(.+?)</a></td>.*?<td>(.+?)</td>', re.DOTALL).findall(data)
@@ -861,7 +933,7 @@ class SettingVhan(Screen):
             self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -921,11 +993,11 @@ class SettingVhan2(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Vhannibal Setting')
+        self.setup_title = ('Setting Vhannibal')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
@@ -946,7 +1018,7 @@ class SettingVhan2(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -955,7 +1027,7 @@ class SettingVhan2(Screen):
 
     def downxmlpage(self):
         url = 'http://sat.alfa-tech.net/upload/settings/vhannibal/'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         self.names = []
@@ -974,7 +1046,7 @@ class SettingVhan2(Screen):
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1034,7 +1106,6 @@ class SettingVhan2(Screen):
                 self['info'].setText(_('Settings Installed ...'))
             else:
                 self['info'].setText(_('Settings Not Installed ...'))
-
         except Exception as e:
             print('error: ', str(e))
             self['info'].setText(_('Not Installed ...'))
@@ -1056,11 +1127,12 @@ class Milenka61(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Milenka61 Setting')
+        self.setup_title = ('Setting Milenka61')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
+
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
@@ -1081,7 +1153,7 @@ class Milenka61(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1090,7 +1162,7 @@ class Milenka61(Screen):
 
     def downxmlpage(self):
         url = 'http://178.63.156.75/tarGz/'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1111,7 +1183,7 @@ class Milenka61(Screen):
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1140,7 +1212,7 @@ class Milenka61(Screen):
                     os.system('rm -rf /etc/enigma2/*.tv')
                     os.system('rm -rf /etc/enigma2/*.del')
                     title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["tar -xvf /tmp/settings.tar.gz -C /; wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
+                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["tar -xvf /tmp/settings.tar.gz -C /;wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
                 self['info'].setText(_('Settings Installed ...'))
             else:
                 self['info'].setText(_('Settings Not Installed ...'))
@@ -1155,11 +1227,11 @@ class SettingManutek(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Manutek Setting')
+        self.setup_title = ('Setting Manutek')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT SAT.TECHNOLOGY SITE')
@@ -1180,7 +1252,7 @@ class SettingManutek(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1189,7 +1261,7 @@ class SettingManutek(Screen):
 
     def downxmlpage(self):
         url = 'http://www.manutek.it/isetting/index.php'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1207,7 +1279,7 @@ class SettingManutek(Screen):
                 self.downloading = True
             self['info'].setText(_('Please select ...'))
             self['key_green'].show()
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1264,11 +1336,11 @@ class SettingMorpheus(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Morpheus Setting')
+        self.setup_title = ('Setting Morpheus')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT MORPHEUS883.ALTERVISTA.ORG SITE')
@@ -1289,7 +1361,7 @@ class SettingMorpheus(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1298,7 +1370,7 @@ class SettingMorpheus(Screen):
 
     def downxmlpage(self):
         url = 'https://github.com/morpheus883/enigma2-zipped'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1318,7 +1390,7 @@ class SettingMorpheus(Screen):
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1375,11 +1447,11 @@ class SettingCiefp(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Ciefp Setting')
+        self.setup_title = ('Setting Ciefp')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT GITHUB.COM/CIEFP SITE')
@@ -1400,7 +1472,7 @@ class SettingCiefp(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1409,7 +1481,7 @@ class SettingCiefp(Screen):
 
     def downxmlpage(self):
         url = 'https://github.com/ciefp/ciefpsettings-enigma2-zipped'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1430,7 +1502,7 @@ class SettingCiefp(Screen):
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1485,11 +1557,11 @@ class SettingBi58(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Bi58 Setting')
+        self.setup_title = ('Setting Bi58')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
@@ -1510,7 +1582,7 @@ class SettingBi58(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1519,7 +1591,7 @@ class SettingBi58(Screen):
 
     def downxmlpage(self):
         url = 'http://178.63.156.75/paneladdons/Bi58/'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1540,7 +1612,7 @@ class SettingBi58(Screen):
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1584,11 +1656,11 @@ class SettingPredrag(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Predrag Setting')
+        self.setup_title = ('Setting Predrag')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
@@ -1609,7 +1681,7 @@ class SettingPredrag(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1618,7 +1690,7 @@ class SettingPredrag(Screen):
 
     def downxmlpage(self):
         url = 'http://178.63.156.75/paneladdons/Predr@g/'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1639,7 +1711,7 @@ class SettingPredrag(Screen):
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1683,11 +1755,11 @@ class SettingCyrus(Screen):
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Cyrus Setting')
+        self.setup_title = ('Setting Cyrus')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
         self['pform'] = Label('PLEASE VISIT CYRUSSETTINGS.COM SITE')
@@ -1709,7 +1781,7 @@ class SettingCyrus(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
@@ -1718,7 +1790,7 @@ class SettingCyrus(Screen):
 
     def downxmlpage(self):
         url = 'http://www.cyrussettings.com/Set_29_11_2011/Dreambox-IpBox/Config.xml'
-        data = make_req(url)
+        data = make_request(url)
         if PY3:
             data = six.ensure_str(data)
         r = data
@@ -1742,7 +1814,7 @@ class SettingCyrus(Screen):
                     self.downloading = True
             self['key_green'].show()
             self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1791,13 +1863,13 @@ class SettingCyrus(Screen):
         ReloadBouquets()
 
 
-class NssInstall(Screen):
+class tvInstall(Screen):
     def __init__(self, session, data, name, selection=None):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS CONSOLE')
+        self.setup_title = ('Install')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.selection = selection
@@ -1831,9 +1903,9 @@ class NssInstall(Screen):
         for name, url in match:
             self.names.append(name)
             self.urls.append(url)
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'].setText(_('Please install ...'))
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Install'))
         self['key_yellow'] = Button(_('Download'))
@@ -1849,7 +1921,7 @@ class NssInstall(Screen):
         self.onLayoutFinish.append(self.start)
 
     def start(self):
-        showlistNss(self.names, self['list'])
+        showlist(self.names, self['list'])
         self['key_green'].show()
 
     def message(self, answer=None):
@@ -2120,8 +2192,8 @@ class NssInstall(Screen):
         if self.aborted:
             self.finish(aborted=True)
 
-    def NssIPK(self):
-        self.session.openWithCallback(self.close, NssIPK)
+    def tvIPK(self):
+        self.session.openWithCallback(self.close, tvIPK)
 
     def install(self, string=''):
         if self.aborted:
@@ -2135,29 +2207,29 @@ class NssInstall(Screen):
                 self['progress'].setValue(self.progclear)
                 self["progress"].hide()
                 self['info'].setText(_('File Downloaded ...'))
-                self.NssIPK()
+                self.tvIPK()
 
 
-class NssIPK(Screen):
+class tvIPK(Screen):
     def __init__(self, session, title=None, cmdlist=None, finishedCallback=None, closeOnSuccess=False):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (name_plug)
+        self.setup_title = ('IPK')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
-        self.ipkpth = str(config.plugins.nssaddon.ipkpth.value)
+        self.ipkpth = str(cfg.ipkpth.value)
         self.list = []
         self.names = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Install'))
         self['key_green'].hide()
-        self['key_yellow'] = Button(_('Script'))
+        self['key_yellow'] = Button(_('Restart'))
         self["key_blue"] = Button('Remove')
         self['key_blue'].hide()
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['pform'] = Label('')
         self['info'] = Label('...')
         self['pth'] = Label(_('Path %s (Set path folder from config)\nPut .ipk .tar.gz .deb .zip and install') % self.ipkpth)
@@ -2169,15 +2241,12 @@ class NssIPK(Screen):
                                      'ColorActions',
                                      'MenuActions'], {'ok': self.ipkinst,
                                                       'green': self.ipkinst,
-                                                      'yellow': self.scriptrun,
+                                                      'yellow': self.msgipkinst,
                                                       'blue': self.msgipkrmv,
                                                       'red': self.close,
                                                       'menu': self.goConfig,
                                                       'cancel': self.close}, -1)
         self.onLayoutFinish.append(self.refreshlist)
-
-    def scriptrun(self):
-        self.session.open(ScriptExecuter)
 
     def refreshlist(self):
         self.list = []
@@ -2197,7 +2266,7 @@ class NssIPK(Screen):
             self['info'].setText(_('Please install ...'))
             self['key_green'].show()
             self['key_blue'].show()
-        showlistNss(self.names, self['list'])
+        showlist(self.names, self['list'])
         self.getfreespace()
 
     def msgipkrmv(self, answer=None):
@@ -2226,7 +2295,7 @@ class NssIPK(Screen):
             print(e)
 
     def goConfig(self):
-        self.session.open(nssConfig)
+        self.session.open(tvConfig)
 
     def ipkinst(self, answer=None):
         if len(self.names) >= 0:
@@ -2318,13 +2387,142 @@ class NssIPK(Screen):
             self.session.open(TryQuitMainloop, 3)
 
 
-class NssRemove(Screen):
+class tvUpdate(Screen):
     def __init__(self, session):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (name_plug)
+        self.setup_title = ('Update')
+        Screen.__init__(self, session)
+        self.setTitle(self.setup_title)
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button(_('Update'))
+        self['key_green'] = Button(_('Restart'))
+        self["key_blue"] = Button('')
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self['info'] = Label('')
+        self['pth'] = Label('')
+        self['pform'] = Label('')
+        self['progress'] = ProgressBar()
+        self["progress"].hide()
+        self['progresstext'] = StaticText()
+        self['list'] = tvList([])
+        self.Update = False
+        self.dmlink = ''
+        self.tlink = ''
+        try:
+            fp = ''
+            destr = plugin_path + '/update.txt'
+            req = Request(upd_path + 'updatePanel.txt')
+            req.add_header('User-Agent', RequestAgent())
+            fp = Utils.str_encode(urlopen(req))
+            fp = fp.read()
+            with open(destr, 'w') as f:
+                f.write(fp)
+                f.seek(0)
+                f.close()
+            with open(destr, 'r') as fp:
+                self.labeltext = ''
+                s1 = fp.readline()
+                s2 = fp.readline()
+                s3 = fp.readline()
+                s4 = fp.readline()
+                s1 = s1.strip()
+                s2 = s2.strip()
+                s3 = s3.strip()
+                s4 = s4.strip()
+                self.version = s1
+                self.tlink = s2
+                self.info = s3
+                self.dmlink = s4
+                fp.close()
+                if self.version <= currversion:
+                    self['info'].setText(title_plug)
+                    self['pth'].setText('No updates available!\n') + self.info
+                    self.Update = False
+                else:
+                    updatestr = title_plug
+                    cvrs = 'New update ' + s1 + ' is available!! '
+                    cvrt = 'Updates: ' + self.info + '\nPress yellow button to start updating'
+                    self.Update = True
+                    self['info'].setText(updatestr)
+                    self['pth'].setText(cvrs)
+                    self['pform'].setText(cvrt)
+                    self['key_green'].show()
+        except:
+            self.Update = False
+            self['info'].setText(title_plug)
+            self['pth'].setText('No updates available!')
+
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.msgupdate1)
+        else:
+            self.timer.callback.append(self.msgupdate1)
+        self.timer.start(1000, 1)
+        self['title'] = Label(title_plug)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions',
+                                     'DirectionActions'], {'ok': self.close,
+                                                           'cancel': self.close,
+                                                           'green': self.msgipkrst1,
+                                                           'red': self.close,
+                                                           'back': self.close,
+                                                           'yellow': self.msgupdate}, -1)
+
+    def msgupdate1(self, answer=None):
+        if self.Update is False:
+            return
+        if cfg.autoupd.value is False:
+            return
+        if answer is None:
+            self.session.openWithCallback(self.msgupdate1, MessageBox, (_('New update available!!')), MessageBox.TYPE_YESNO)
+        else:
+            self.msgupdate(True)
+
+    def msgupdate(self, answer=None):
+        if self.Update is False:
+            return
+        if answer is None:
+            self.session.openWithCallback(self.msgupdate, MessageBox, _('Do you want update plugin ?\nPlease Reboot GUI after install!'), MessageBox.TYPE_YESNO)
+        else:
+            if os.path.exists('/var/lib/dpkg/info'):
+                com = self.dmlink
+                dom = 'New version ' + self.version
+                tvtemp = '/tmp/tvaddon.tar'
+                import requests
+                r = requests.get(com)
+                with open(tvtemp, 'wb') as f:
+                    f.write(r.content)
+                os.system('sleep 3')
+                self.session.open(tvConsole, _('Install Update: %s') % dom, ['tar -xvf /tmp/tvaddon.tar -C /'], finishedCallback=self.msgipkrst1, closeOnSuccess=False)
+            else:
+                com = self.tlink
+                dom = 'New Version ' + self.version
+                self.session.open(tvConsole, _('Install Update: %s') % dom, ['opkg install --force-reinstall %s' % com], finishedCallback=self.msgipkrst1, closeOnSuccess=False)
+
+    def msgipkrst1(self, answer=None):
+        if answer is None:
+            self.session.openWithCallback(self.msgipkrst1, MessageBox, _('Do you want restart enigma2 ?'), MessageBox.TYPE_YESNO)
+        else:
+            epgpath = '/media/hdd/epg.dat'
+            epgbakpath = '/media/hdd/epg.dat.bak'
+            if os.path.exists(epgbakpath):
+                os.remove(epgbakpath)
+            if os.path.exists(epgpath):
+                shutil.copyfile(epgpath, epgbakpath)
+            self.session.open(TryQuitMainloop, 3)
+
+
+class tvRemove(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = os.path.join(skin_path, 'tvall.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Remove Addon')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
@@ -2335,14 +2533,14 @@ class NssRemove(Screen):
         except:
             self.appClosed_conn = self.container.appClosed.connect(self.runFinished)
 
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['key_green'] = Button(_('Uninstall'))
         self['key_yellow'] = Button(_('Restart'))
         self['key_red'] = Button(_('Back'))
-        self["key_blue"] = Button('Script')
+        self["key_blue"] = Button('')
         self['key_blue'].hide()
         self['key_green'].hide()
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['pform'] = Label('')
         self['info'] = Label('Select')
         self['pth'] = Label('Remove not necessary addon')
@@ -2353,7 +2551,6 @@ class NssRemove(Screen):
                                      'ColorActions'], {'green': self.message1,
                                                        'ok': self.message1,
                                                        'yellow': self.msgipkrst,
-                                                       'blue': self.scriptrun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -1)
         self.onLayoutFinish.append(self.getfreespace)
@@ -2364,9 +2561,6 @@ class NssRemove(Screen):
     def runFinished(self, retval):
         self['pth'].setText(_('Addons Packege removed successfully.'))
         self.getfreespace()
-
-    def scriptrun(self):
-        self.session.open(ScriptExecuter)
 
     def cancel(self):
         if not self.container.running():
@@ -2418,7 +2612,7 @@ class NssRemove(Screen):
             if len(self.names) > -1:
                 self['info'].setText(_('Please Remove ...'))
                 self['key_green'].show()
-            showlistNss(self.names, self['list'])
+            showlist(self.names, self['list'])
         except Exception as e:
             print(e)
 
@@ -2465,92 +2659,19 @@ class NssRemove(Screen):
             self.session.open(TryQuitMainloop, 3)
 
 
-class ScriptExecuter(Screen):
-
+class tvConfig(Screen, ConfigListScreen):
     def __init__(self, session):
+        skin = os.path.join(skin_path, 'tvConfig.xml')
+        f = open(skin, 'r')
+        self.skin = f.read()
+        f.close()
         Screen.__init__(self, session)
-
-        self.session = session
-        skin = os.path.join(skin_path, 'scriptpanel.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setTitle(name_plug)
-
-        self['labstatus'] = Label(_('NO SCRIPT FOUND'))
-        self['key_red'] = Label(_('Exit'))
-        self['key_green'] = Label(_('Execute'))
-        self.mlist = []
-        self.populateScript()
-        self['list'] = List(self.mlist)
-        self['list'].onSelectionChanged.append(self.schanged)
-        self['actions'] = ActionMap(['WizardActions',
-                                     'ColorActions'], {'ok': self.startScript,
-                                                       'back': self.close,
-                                                       'green': self.startScript,
-                                                       'red': self.close})
-        self.onLayoutFinish.append(self.script_sel)
-        self.onShown.append(self.setWindowTitle)
-
-    def setWindowTitle(self):
-        self.setTitle(name_plug)
-
-    def script_sel(self):
-        self['list'].index = 1
-        self['list'].index = 0
-
-    def populateScript(self):
-        try:
-            if not os.path.exists('/usr/script'):
-                mkdir('/usr/script', 493)
-        except:
-            pass
-
-        myscripts = listdir('/usr/script')
-        for fil in myscripts:
-            if fil.find('.sh') != -1:
-                fil2 = fil[:-3]
-                desc = 'N/A'
-                myfil = '/usr/script/' + str(fil)
-                # os.system("sed -i -e 's/\r$//' %s" % myfil)
-                # os.system("sed -i -e 's/^M$//' %s" % myfil)
-                # lululla fixed encode crash on atv py3
-                with codecs.open(myfil, "rb", encoding="latin-1") as f:
-                    for line in f.readlines():
-                        if line.find('#DESCRIPTION=') != -1:
-                            line = line.strip()
-                            desc = line[13:]
-                f.close()
-                res = (fil2, desc)
-                self.mlist.append(res)
-
-    def schanged(self):
-        mysel = self['list'].getCurrent()
-        if mysel:
-            mytext = ' ' + mysel[1]
-            self['labstatus'].setText(str(mytext))
-
-    def startScript(self):
-        if len(self.mlist) >= 0:
-            mysel = self['list'].getCurrent()
-            if mysel:
-                mysel = mysel[0]
-                mysel2 = '/usr/script/' + mysel + '.sh'
-                chmod(mysel2, 0o0755)
-                mytitle = 'NonSoloSat Script: ' + mysel
-                self.session.open(tvConsole, title=mytitle, cmdlist=[mysel2])
-
-
-class nssConfig(Screen, ConfigListScreen):
-    def __init__(self, session):
-        skin = os.path.join(skin_path, 'nssConfig.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        Screen.__init__(self, session)
-        self.setup_title = _("Config NSS Addon")
+        self.setup_title = _("Config")
         self.onChangedEntry = []
         self.session = session
         self.setTitle(self.setup_title)
         self['description'] = Label('')
+        self["paypal"] = Label('')
         self['info'] = Label(_('Config Panel Addon'))
         # self['info'] = ScrollLabel('')
         self['key_yellow'] = Button(_('Update'))
@@ -2558,8 +2679,7 @@ class nssConfig(Screen, ConfigListScreen):
         self['key_red'] = Button(_('Back'))
         self["key_blue"] = Button('')
         self['key_blue'].hide()
-        self['key_yellow'].hide()
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self["setupActions"] = ActionMap(['OkCancelActions',
                                           'DirectionActions',
                                           'ColorActions',
@@ -2569,27 +2689,31 @@ class nssConfig(Screen, ConfigListScreen):
                                                                  'back': self.close,
                                                                  # 'left': self.keyLeft,
                                                                  # 'right': self.keyRight,
-                                                                 # 'yellow': self.tvUpdate,
+                                                                 'yellow': self.tvUpdate,
                                                                  "showVirtualKeyboard": self.KeyText,
                                                                  'ok': self.Ok_edit,
                                                                  'green': self.msgok}, -1)
         self.list = []
         ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self.createSetup()
-        self.onLayoutFinish.append(self.layoutFinished)
+        # self.onLayoutFinish.append(self.layoutFinished)
         if self.setInfo not in self['config'].onSelectionChanged:
             self['config'].onSelectionChanged.append(self.setInfo)
 
     def arckget(self):
         zarcffll = ''
         try:
-            zarcffll = os.popen('opkg print-architecture | grep -iE "arm|aarch64|mips|cortex|h4|sh_4"').read().strip('\n\r')
+            if os.path.exists('/var/lib/dpkg/info'):
+                zarcffll = os.popen('dpkg --print-architecture | grep -iE "arm|aarch64|mips|cortex|sh4|sh_4"').read().strip('\n\r')
+            else:
+                zarcffll = os.popen('opkg print-architecture | grep -iE "arm|aarch64|mips|cortex|h4|sh_4"').read().strip('\n\r')
         except Exception as e:
             print("Error ", e)
         return str(zarcffll)
 
     def layoutFinished(self):
-        # self.setTitle(self.setup_title)
+        payp = paypal()
+        self["paypal"].setText(payp)
         try:
             arkFull = ''
             if self.arckget():
@@ -2598,7 +2722,7 @@ class nssConfig(Screen, ConfigListScreen):
             img = os.popen('cat /etc/issue').read().strip('\n\r')
             arc = os.popen('uname -m').read().strip('\n\r')
             ifg = os.popen('wget -qO - ifconfig.me').read().strip('\n\r')
-            img = img.replace('\l', '')
+            # img = img.replace('\l', '')
             libs = os.popen('ls -l /usr/lib/libss*.*').read().strip('\n\r')
             if libs:
                 libsssl = libs
@@ -2608,13 +2732,17 @@ class nssConfig(Screen, ConfigListScreen):
             print("Error ", e)
             self['info'].setText(_(':) by Lululla '))
 
+    def tvUpdate(self):
+        self.session.open(tvUpdate)
+
     def createSetup(self):
         self.editListEntry = None
         self.list = []
-        self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), config.plugins.nssaddon.mmkpicon, _("Configure folder containing picons files")))
-        self.list.append(getConfigListEntry(_('Addon Installation Path'), config.plugins.nssaddon.ipkpth, _("Path to the addon installation folder")))
-        self.list.append(getConfigListEntry(_('Link in Extensions Menu'), config.plugins.nssaddon.strtext, _("Link in Extensions button")))
-        self.list.append(getConfigListEntry(_('Link in Main Menu'), config.plugins.nssaddon.strtmain, _("Link in Main Menu")))
+        self.list.append(getConfigListEntry(_('Auto Update Plugin'), cfg.autoupd, _("If Active: Automatic Update Plugin")))
+        self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), cfg.mmkpicon, _("Configure folder containing picons files")))
+        self.list.append(getConfigListEntry(_('Path Manual IPK'), cfg.ipkpth, _("Path to the addon installation folder")))
+        self.list.append(getConfigListEntry(_('Link in Extensions Menu'), cfg.strtext, _("Link in Extensions button")))
+        self.list.append(getConfigListEntry(_('Link in Main Menu'), cfg.strtmain, _("Link in Main Menu")))
         self["config"].list = self.list
         self["config"].setList(self.list)
         self.setInfo()
@@ -2645,7 +2773,7 @@ class nssConfig(Screen, ConfigListScreen):
         return SetupSummary
 
     def msgok(self):
-        if os.path.exists(config.plugins.nssaddon.ipkpth.value) is False:
+        if os.path.exists(cfg.ipkpth.value) is False:
             self.session.open(MessageBox, _('Device not detected!'), MessageBox.TYPE_INFO, timeout=4)
         for x in self["config"].list:
             x[1].save()
@@ -2655,10 +2783,14 @@ class nssConfig(Screen, ConfigListScreen):
     def Ok_edit(self):
         ConfigListScreen.keyOK(self)
         sel = self['config'].getCurrent()[1]
-        if sel and sel == config.plugins.nssaddon.mmkpicon:
+        if sel and sel == cfg.mmkpicon:
             self.setting = 'mmkpicon'
-            mmkpth = config.plugins.nssaddon.mmkpicon.value
+            mmkpth = cfg.mmkpicon.value
             self.openDirectoryBrowser(mmkpth)
+        if sel and sel == cfg.ipkpth:
+            self.setting = 'ipkpth'
+            ipkpth = cfg.ipkpth.value
+            self.openDirectoryBrowser(ipkpth)
         else:
             pass
 
@@ -2681,9 +2813,9 @@ class nssConfig(Screen, ConfigListScreen):
     def openDirectoryBrowserCB(self, path):
         if path is not None:
             if self.setting == 'mmkpicon':
-                config.plugins.nssaddon.mmkpicon.setValue(path)
+                cfg.mmkpicon.setValue(path)
             if self.setting == 'ipkpth':
-                config.plugins.nssaddon.ipkpth.setValue(path)
+                cfg.ipkpth.setValue(path)
         return
 
     def KeyText(self):
@@ -2711,45 +2843,52 @@ class nssConfig(Screen, ConfigListScreen):
             self.close()
 
 
-class SelectPiconz(Screen):
+Panel_list4 = [
+    _('VIDEO ADDONS'),
+    _('ADULT ADDON'),
+    _('SCRIPT'),
+    _('REPOSITORY')]
+
+
+global KodilitePcd
+KodilitePcd = "/usr/lib/enigma2/python/Plugins/Extensions/KodiLite"
+
+
+class mainkodilite(Screen):
+
     def __init__(self, session):
+
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Picons')
+        self.setup_title = ('Kodilite by pcd')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['pth'] = Label('')
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
+        self['pth'].setText(_('Support on'))
         self['pform'] = Label('')
+        self['pform'].setText(_('linuxsat-support.com '))
         self['info'] = Label('')
         self['info'].setText(_('Loading data... Please wait'))
         self['key_green'] = Button(_('Select'))
         self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button(_('Remove'))
+        self['key_yellow'] = Button('')
         self["key_blue"] = Button('')
-        # self['key_yellow'].hide()
+        self['key_yellow'].hide()
         self['key_blue'].hide()
         self['key_green'].hide()
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -2)
         self.onLayoutFinish.append(self.updateMenuList)
-
-    def getfreespace(self):
-        try:
-            fspace = Utils.freespace()
-            self['pform'].setText(str(fspace))
-        except Exception as e:
-            print(e)
 
     def closerm(self):
         self.close()
@@ -2760,160 +2899,45 @@ class SelectPiconz(Screen):
             del self.menu_list[0]
         list = []
         idx = 0
-        for x in Panel_list3:
-            list.append(nssListEntry(x, idx))
+        for x in Panel_list4:
+            list.append(DailyListEntry(x, idx))
             self.menu_list.append(x)
             idx += 1
         self['key_green'].show()
         self['list'].setList(list)
         self['info'].setText(_('Please select'))
-        self.getfreespace()
 
     def okRun(self):
         self.keyNumberGlobalCB(self['list'].getSelectedIndex())
 
     def keyNumberGlobalCB(self, idx):
         sel = self.menu_list[idx]
-        if sel == ('MMARK PICONS BLACK'):
-            self.session.open(MMarkFolderz, host_blk)
-        elif sel == 'MMARK PICONS TRANSPARENT':
-            self.session.open(MMarkFolderz, host_trs)
-        elif sel == ('MMARK PICONS MOVIE'):
-            self.session.open(MMarkPiconsf, 'MMark-Picons', host_mov, True)
-        elif sel == ('OPEN PICONS'):  # https://openpicons.com/picons/full-motor-srp/hardlink/ # https://openpicons.com/picons/?dir=full-motor-srp/ipk
-            # return
-            host_open = 'https://openpicons.com/picons/?dir=full-motor-srp/hardlink'
-            self.session.open(OpenPicons, 'OpenPicons', host_open)
-        else:
-            return
-
-    def remove(self):
-        self.session.openWithCallback(self.remove1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def remove1(self, answer):
-        if answer:
-            self['info'].setText(_('Erase %s... please wait' % str(mmkpicon)))
-            piconsx = glob.glob(str(mmkpicon) + '/*.png')
-            for f in piconsx:
-                try:
-                    os.remove(f)
-                except OSError as e:
-                    print("Error: %s : %s" % (f, e.strerror))
-        self.session.open(MessageBox, _('%s it has been cleaned' % str(mmkpicon)), MessageBox.TYPE_INFO, timeout=4)
-        self['info'].setText(_('Please select ...'))
+        if sel == _('VIDEO ADDONS') or sel == 0:
+            self.session.open(pluginx)
+        elif sel == _('ADULT ADDON') or sel == 1:
+            self.session.open(plugins_adult)
+        elif sel == _('SCRIPT') or sel == 2:
+            self.session.open(script)
+        elif sel == _('REPOSITORY') or sel == 3:
+            self.session.open(repository)
 
 
-class MMarkFolderz(Screen):
-    def __init__(self, session, url):
+class pluginx(Screen):
+    def __init__(self, session):
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('NSS Addon Picons')
+        self.setup_title = ('Kodilite by pcd')
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
-        self['list'] = nssList([])
+        self['list'] = tvList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label('')
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
+        self['pth'].setText(_('Support on'))
         self['pform'] = Label('')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Select'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button('')
-        self["key_blue"] = Button('')
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.url = url
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-        self.onLayoutFinish.append(self.getfreespace)
-
-    def getfreespace(self):
-        try:
-            fspace = Utils.freespace()
-            self['pform'].setText(str(fspace))
-        except Exception as e:
-            print(e)
-
-    def downxmlpage(self):
-        url = six.ensure_binary(self.url)
-        getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
-
-    def errorLoad(self):
-        self['info'].setText(_('Try again later ...'))
-        self.downloading = False
-
-    def _gotPageLoad(self, data):
-        r = data
-        if PY3:
-            r = six.ensure_str(data)
-        self.names = []
-        self.urls = []
-        try:
-            n1 = r.find('"folderkey"', 0)
-            n2 = r.find('more_chunks', n1)
-            data2 = r[n1:n2]
-            regex = '{"folderkey":"(.*?)".*?"name":"(.*?)".*?"created":"(.*?)"'
-            match = re.compile(regex, re.DOTALL).findall(data2)
-            for url, name, data in match:
-                url = 'https://www.mediafire.com/api/1.5/folder/get_content.php?folder_key=' + url + '&content_type=files&chunk_size=1000&response_format=json'
-                url = url.replace('\\', '')
-                name = 'Picons-' + name
-                self.urls.append(url)
-                self.names.append(name)
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-            self.downloading = True
-        except:
-            self.downloading = False
-
-    def okRun(self):
-        i = len(self.names)
-        if i < 0:
-            return
-        idx = self['list'].getSelectionIndex()
-        name = self.names[idx]
-        url = self.urls[idx]
-        self.session.open(MMarkPiconsf, name, url)
-
-    def cancel(self, result=None):
-        self.downloading = False
-        self.close(None)
-        return
-
-
-class MMarkPiconsf(Screen):
-    def __init__(self, session, name, url, movie=False):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('NSS Addon Picons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label('')
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
-        self['pform'] = Label('')
+        self['pform'].setText(_('linuxsat-support.com '))
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -2924,11 +2948,7 @@ class MMarkPiconsf(Screen):
         self['key_yellow'].hide()
         self['key_blue'].hide()
         self['key_green'].hide()
-        self.getfreespace()
         self.downloading = False
-        self.movie = movie
-        self.url = url
-        self.name = name
         self.error_message = ""
         self.last_recvbytes = 0
         self.error_message = None
@@ -2940,263 +2960,429 @@ class MMarkPiconsf(Screen):
         else:
             self.timer.callback.append(self.downxmlpage)
         self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
+        self['title'] = Label(title_plug)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
                                                        'green': self.okRun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -2)
-        self.onLayoutFinish.append(self.getfreespace)
-
-    def getfreespace(self):
-        try:
-            fspace = Utils.freespace()
-            self['pform'].setText(str(fspace))
-        except Exception as e:
-            print(e)
 
     def downxmlpage(self):
-        url = six.ensure_binary(self.url)
-        getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
-
-    def errorLoad(self):
-        self['info'].setText(_('Try again later ...'))
-        self.downloading = False
-
-    def _gotPageLoad(self, data):
-        r = data
+        self.url = "http://patbuweb.com/uppy/EnigmaOE2.0/kodilite/plugins"
+        data = make_request(self.url)
         if PY3:
-            r = six.ensure_str(data)
+            data = six.ensure_str(data)
         self.names = []
         self.urls = []
         try:
-            n1 = r.find('"quickkey":', 0)
-            n2 = r.find('more_chunks', n1)
-            data2 = r[n1:n2]
-            regex = 'filename":"(.*?)".*?"created":"(.*?)".*?"downloads":"(.*?)".*?"normal_download":"(.*?)"'
-            match = re.compile(regex, re.DOTALL).findall(data2)
-            for name, data, download, url in match:
-                if '.zip' in url:
-                    url = url.replace('\\', '')
-                    if self.movie:
-                        name = name.replace('_', ' ').replace('-', ' ').replace('mmk', '').replace('.zip', '')
-                        name = name + ' ' + data[0:10] + ' ' + 'Down: ' + download
-                    else:
-                        name = name.replace('_', ' ').replace('mmk', 'MMark').replace('.zip', '')
-                        name = name + ' ' + data[0:10] + ' ' + 'Down:' + download
-                    self.urls.append(url)
-                    self.names.append(name)
-            self['info'].setText(_('Please select ...'))
+            match = re.compile(regexL, re.DOTALL).findall(data)
+            for url, name, txt in match:
+                if 'zip' in url:
+                    url = 'http://patbuweb.com' + str(url)
+                    name = name.replace("%20", " ").replace("-", " ").replace("_", " ").replace(".zip", "")
+                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
+                    name = name + ' - ' + date
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
+                    self.downloading = True
+                else:
+                    self['info'].setText(_('No File!!'))
+                    self.downloading = False
+            showlist(self.names, self['list'])
             self['key_green'].show()
-            showlistNss(self.names, self['list'])
-            self.downloading = True
-        except:
-            self.downloading = False
+            self['info'].setText(_('Please select'))
+        except Exception as e:
+            print('error: ', str(e))
 
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, result):
-        self['info'].setText(_('... please wait'))
-        if result:
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                self.name = self.names[idx]
-                url = self.urls[idx]
-                dest = "/tmp/download.zip"
-                print('url333: ', url)
-                if os.path.exists(dest):
-                    os.remove(dest)
-                try:
-                    myfile = Utils.ReadUrl(url)
-                    print('response: ', myfile)
-                    regexcat = 'href="https://download(.*?)"'
-                    match = re.compile(regexcat, re.DOTALL).findall(myfile)
-                    print("match =", match[0])
-                    # myfile = checkMyFile(url)
-                    # print('myfile222:  ', myfile)
-                    url = 'https://download' + str(match[0])
-                    print("url final =", url)
-                    # myfile = checkMyFile(url)
-                    # print('myfile222:  ', myfile)
-                    # # url =  'https://download' + str(myfile)
-                    self.download = downloadWithProgress(url, dest)
-                    self.download.addProgress(self.downloadProgress)
-                    self.download.start().addCallback(self.install).addErrback(self.download_failed)
-                except Exception as e:
-                    print('error: ', str(e))
-                    print("Error: can't find file or read data")
-            else:
-                self['info'].setText(_('Picons Not Installed ...'))
-
-    def downloadProgress(self, recvbytes, totalbytes):
-        self['info'].setText(_('Download in progress...'))
-        self["progress"].show()
-        self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
-        self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
-        self.last_recvbytes = recvbytes
-
-    def showError(self):
-        print("download error ")
-        self.downloading = False
-        self.close()
-
-    def download_failed(self, failure_instance=None, error_message=""):
-        self.error_message = error_message
-        if error_message == "" and failure_instance is not None:
-            self.error_message = failure_instance.getErrorMessage()
-        self.downloading = False
-        info = 'Download Failed!!! ' + self.error_message
-        self['info'].setText(info)
-        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
-
-    def abort(self):
-        print("aborting", self.url)
-        if self.download:
-            self.download.stop()
-        self.downloading = False
-        self.aborted = True
-
-    def download_finished(self, string=""):
-        if self.aborted:
-            self.finish(aborted=True)
-
-    def install(self, string=''):
-        if self.aborted:
-            self.finish(aborted=True)
-        else:
-            self.progclear = 0
-            self['info'].setText(_('File Downloaded ...'))
-            if os.path.exists('/tmp/download.zip'):
-                self['info'].setText(_('Install ...'))
-                self.downloading = False
-                self['progresstext'].text = ''
-                self['progress'].setValue(self.progclear)
-                self["progress"].hide()
-                self['info'].setText(_('Please select ...'))
-                myCmd = "unzip -o -q '/tmp/download.zip' -d %s/" % str(mmkpicon)
-                subprocess.Popen(myCmd, shell=True, executable='/bin/bash')
-                info = 'Successfully Picons Installed'
-                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
-
-
-class OpenPicons(Screen):
-    def __init__(self, session, name, url):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('OpenPicons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label('')
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
-        self['pform'] = Label('')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button('')
-        self["key_blue"] = Button('')
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.getfreespace()
-        self.downloading = False
-        self.url = url
-        self.name = name
-        self.error_message = ""
-        self.last_recvbytes = 0
-        self.error_message = None
-        self.download = None
-        self.aborted = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-        self.onLayoutFinish.append(self.getfreespace)
-
-    def getfreespace(self):
-        try:
-            # from Components.PluginComponent import plugins
-            # plugins.clearPluginList()
-            # plugins.readPluginList(resolveFilename(SCOPE_PLUGINS))
-            fspace = Utils.freespace()
-            self['pform'].setText(str(fspace))
-        except Exception as e:
-            print(e)
-
-    def downxmlpage(self):
-        try:
-            data = make_req(self.url)
-            if PY3:
-                data = six.ensure_str(data)
-            self._gotPageLoad(data)
-        except Exception as e:
-            print('no link valid: ', e)
-        # getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
-        # https://openpicons.com/picons/?dir=full-motor-srp
-
-    def errorLoad(self):
-        self['info'].setText(_('Try again later ...'))
-        self.downloading = False
-
-    def _gotPageLoad(self, data):
-        r = data
-        if PY3:
-            r = six.ensure_str(data)
-        self.names = []
-        self.urls = []
-        try:
-            regex = 'full-motor-srp/hardlink/(.*?).tar.xz"'
-            match = re.compile(regex, re.DOTALL).findall(r)
-            for url in match:
-                # full-motor-srp/hardlink/srp-full.100x60-86x46.dark.on.blue_2023-12-12--23-58-23.hardlink.tar.xz"
-                name = url.replace('.hardlink', '').replace('.', '-').replace('_', '-')
-                url = 'https://openpicons.com/picons/full-motor-srp/hardlink/' + url + '.tar.xz'
-                self.urls.append(url)
-                self.names.append(Utils.str_encode(name))
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-            self.downloading = True
-        except:
-            self.downloading = False
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?\nATTENTION: MAKE SURE YOU HAVE ENOUGH SPACE\nTHERE ARE A LOT OF PICONS AND IT TAKES TIME!!!"), MessageBox.TYPE_YESNO)
 
     def okRun1(self, answer):
         if answer:
             if self.downloading is True:
                 idx = self["list"].getSelectionIndex()
-                self.name = self.names[idx]
-                url = self.urls[idx]
-                print('1 url type=', type(url))
-                # url = six.ensure_binary(url)
-                # print('2 url type=', type(url))
+                self.dom = self.names[idx]
+                self.com = self.urls[idx]
+                print('1 self.com type=', type(self.com))
+                self.com = six.ensure_binary(self.com)
+                print('2 self.com type=', type(self.com))
                 # if PY3:
-                    # url = url.encode()
-                self.dest = "/tmp/download.tar.xz"
-                if os.path.exists(self.dest):
-                    os.remove(self.dest)
-                self.download = downloadWithProgress(url, self.dest)
+                    # self.com = self.com.encode()
+                self.source = self.com.replace(str(self.url), '')
+                self.dest = "/tmp" + self.source
+
+                # from . import Downloader
+                # self.download = Downloader.downloadWithProgress(self.com, self.dest)
+                print('self.com:', self.com)
+                print('self.dest:', self.dest)
+                self.download = downloadWithProgress(self.com, self.dest)
                 self.download.addProgress(self.downloadProgress)
                 self.download.start().addCallback(self.install).addErrback(self.download_failed)
             else:
-                self['info'].setText(_('Picons Not Installed ...'))
+                self.close()
+
+    def downloadProgress(self, recvbytes, totalbytes):
+        self['info'].setText(_('Download in progress...'))
+        self["progress"].show()
+        self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
+        self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
+        self.last_recvbytes = recvbytes
+
+    # def downloadProgress(self, recvbytes, totalbytes):
+        # self["progress"].show()
+        # self['info'].setText(_('Download...'))
+        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
+        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
+        # print('progress = ok')
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
+
+    def cancel(self, result=None):
+        self.close(None)
+        return
+
+    def finished(self, result):
+        self['info'].setText(_('Please select ...'))
+        return
+
+    def download_failed(self, failure_instance=None, error_message=""):
+        self.error_message = error_message
+        if error_message == "" and failure_instance is not None:
+            self.error_message = failure_instance.getErrorMessage()
+        self.downloading = False
+        info = 'Download Failed!!! ' + self.error_message
+        self['info'].setText(info)
+        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+        # self.session.openWithCallback(self.close, MessageBox, _(info), timeout=3, close_on_any_key=True)
+
+    def abort(self):
+        print("aborting", self.url)
+        if self.download:
+            self.download.stop()
+        self.downloading = False
+        self.aborted = True
+
+    def download_finished(self, string=""):
+        if self.aborted:
+            self.finish(aborted=True)
+
+    def rst1(self):
+        pass
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('File Downloaded ...'))
+            if os.path.exists(KodilitePcd):
+                self.fdest = KodilitePcd + "/plugins"
+                if fileExists(self.dest):
+                    title = _("Installation")
+                    cmd = "unzip -o -q '%s' -d '%s'" % (self.dest, self.fdest)
+                    self.session.open(tvConsole, _(title), cmdlist=[str(cmd)], closeOnSuccess=False)
+                self['info'].setText(_('Please select ...'))
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                info = 'Successfully Addons Installed'
+                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+
+class plugins_adult(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = os.path.join(skin_path, 'tvall.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Kodilite by pcd')
+        Screen.__init__(self, session)
+        self.setTitle(self.setup_title)
+        self.list = []
+        self['list'] = tvList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['pth'] = Label('')
+        self['pth'].setText(_('Support on'))
+        self['pform'] = Label('')
+        self['pform'].setText(_('linuxsat-support.com '))
+        self['progress'] = ProgressBar()
+        self["progress"].hide()
+        self['progresstext'] = StaticText()
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button('')
+        self["key_blue"] = Button('')
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.downloading = False
+        self.error_message = ""
+        self.last_recvbytes = 0
+        self.error_message = None
+        self.download = None
+        self.aborted = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+        else:
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(title_plug)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+
+    def downxmlpage(self):
+        self.url = "http://patbuweb.com/uppy/EnigmaOE2.0/kodilite/pluginadult"
+        data = make_request(self.url)
+        if PY3:
+            data = six.ensure_str(data)
+        self.names = []
+        self.urls = []
+        try:
+            match = re.compile(regexL, re.DOTALL).findall(data)
+            for url, name, txt in match:
+                if 'zip' in url:
+                    url = "http://patbuweb.com" + str(url)
+                    name = name.replace("%20", " ").replace("-", " ").replace("_", " ").replace(".zip", "")
+                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
+                    name = name + ' - ' + date
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
+                    self.downloading = True
+                else:
+                    self['info'].setText(_('No File!!'))
+                    self.downloading = False
+            showlist(self.names, self['list'])
+            self['key_green'].show()
+            self['info'].setText(_('Please select'))
+        except Exception as e:
+            print('error: ', str(e))
+
+    def okRun1(self):
+        self.allow()
+
+    def allow(self):
+        if config.ParentalControl.configured.value:
+            from Screens.InputBox import PinInput
+            self.session.openWithCallback(self.pinEntered, PinInput, pinList=[config.ParentalControl.setuppin.value], triesEntry=config.ParentalControl.retries.servicepin, title=_("Please enter the parental control pin code"), windowTitle=_("Enter pin code"))
+        else:
+            self.pinEntered(True)
+
+    def pinEntered(self, result):
+        if result:
+            self.okRun()
+        else:
+            self.session.openWithCallback(self.close, MessageBox, _("The pin code you entered is wrong."), MessageBox.TYPE_ERROR)
+            self.close()
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun2(self, answer):
+        if answer:
+            if self.downloading is True:
+                idx = self["list"].getSelectionIndex()
+                self.dom = self.names[idx]
+                self.com = self.urls[idx]
+
+                print('1 self.com type=', type(self.com))
+                self.com = six.ensure_binary(self.com)
+                print('2 self.com type=', type(self.com))
+                # if PY3:
+                    # self.com = self.com.encode()
+
+                self.source = self.com.replace(str(self.url), '')
+                self.dest = "/tmp" + self.source
+
+                # from . import Downloader
+                # self.download = Downloader.downloadWithProgress(self.com, self.dest)
+                print('self.com:', self.com)
+                print('self.dest:', self.dest)
+                self.download = downloadWithProgress(self.com, self.dest)
+                self.download.addProgress(self.downloadProgress)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+            else:
+                self.close()
+
+    def downloadProgress(self, recvbytes, totalbytes):
+        self['info'].setText(_('Download in progress...'))
+        self["progress"].show()
+        self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
+        self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
+        self.last_recvbytes = recvbytes
+
+    # def downloadProgress(self, recvbytes, totalbytes):
+        # self["progress"].show()
+        # self['info'].setText(_('Download...'))
+        # self['progress'].value = int(100 * recvbytes / float(totalbytes))
+        # self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (recvbytes / 1024, totalbytes / 1024, 100 * recvbytes / float(totalbytes))
+        # print('progress = ok')
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
+
+    def cancel(self, result=None):
+        self.close(None)
+        return
+
+    def finished(self, result):
+        self['info'].setText(_('Please select ...'))
+        return
+
+    def download_failed(self, failure_instance=None, error_message=""):
+        self.error_message = error_message
+        if error_message == "" and failure_instance is not None:
+            self.error_message = failure_instance.getErrorMessage()
+        self.downloading = False
+        info = 'Download Failed!!! ' + self.error_message
+        self['info'].setText(info)
+        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+        # self.session.openWithCallback(self.close, MessageBox, _(info), timeout=3, close_on_any_key=True)
+
+    def abort(self):
+        print("aborting", self.url)
+        if self.download:
+            self.download.stop()
+        self.downloading = False
+        self.aborted = True
+
+    def download_finished(self, string=""):
+        if self.aborted:
+            self.finish(aborted=True)
+
+    def rst1(self):
+        pass
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('File Downloaded ...'))
+            if os.path.exists(KodilitePcd):
+                self.fdest = KodilitePcd + "/plugins"
+                if fileExists(self.dest):
+                    title = _("Installation")
+                    cmd = "unzip -o -q '%s' -d '%s'" % (self.dest, self.fdest)
+                    self.session.open(tvConsole, _(title), cmdlist=[str(cmd)], closeOnSuccess=False)
+                self['info'].setText(_('Please select ...'))
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                info = 'Successfully Addons Installed'
+                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+
+class script(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = os.path.join(skin_path, 'tvall.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Kodilite by pcd')
+        Screen.__init__(self, session)
+        self.setTitle(self.setup_title)
+        self.list = []
+        self['list'] = tvList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['pth'] = Label('')
+        self['pth'].setText(_('Support on'))
+        self['pform'] = Label('')
+        self['pform'].setText(_('linuxsat-support.com '))
+        self['progress'] = ProgressBar()
+        self["progress"].hide()
+        self['progresstext'] = StaticText()
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button('')
+        self["key_blue"] = Button('')
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.downloading = False
+        self.error_message = ""
+        self.last_recvbytes = 0
+        self.error_message = None
+        self.download = None
+        self.aborted = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+        else:
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(title_plug)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+
+    def downxmlpage(self):
+        self.url = "http://patbuweb.com/uppy/EnigmaOE2.0/kodilite/script"
+        data = make_request(self.url)
+        if PY3:
+            data = six.ensure_str(data)
+        self.names = []
+        self.urls = []
+        try:
+            match = re.compile(regexL, re.DOTALL).findall(data)
+            for url, name, txt in match:
+                if 'zip' in url:
+                    url = "http://patbuweb.com" + str(url)
+                    name = name.replace("%20", " ").replace("-", " ").replace("_", " ").replace(".zip", "")
+                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
+                    name = name + ' - ' + date
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
+                    self.downloading = True
+                else:
+                    self['info'].setText(_('No File!!'))
+                    self.downloading = False
+            showlist(self.names, self['list'])
+            self['key_green'].show()
+            self['info'].setText(_('Please select'))
+        except Exception as e:
+            print('error: ', str(e))
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
+            if self.downloading is True:
+                idx = self["list"].getSelectionIndex()
+                self.dom = self.names[idx]
+                self.com = self.urls[idx]
+
+                print('1 self.com type=', type(self.com))
+                self.com = six.ensure_binary(self.com)
+                print('2 self.com type=', type(self.com))
+                # if PY3:
+                    # self.com = self.com.encode()
+
+                self.source = self.com.replace(str(self.url), '')
+                self.dest = "/tmp" + self.source
+
+                # from . import Downloader
+                # self.download = Downloader.downloadWithProgress(self.com, self.dest)
+                print('self.com:', self.com)
+                print('self.dest:', self.dest)
+                self.download = downloadWithProgress(self.com, self.dest)
+                self.download.addProgress(self.downloadProgress)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+            else:
+                self.close()
 
     def downloadProgress(self, recvbytes, totalbytes):
         self['info'].setText(_('Download in progress...'))
@@ -3209,6 +3395,14 @@ class OpenPicons(Screen):
         print("download error ")
         self.downloading = False
         self.close()
+
+    def cancel(self, result=None):
+        self.close(None)
+        return
+
+    def finished(self, result):
+        self['info'].setText(_('Please select ...'))
+        return
 
     def download_failed(self, failure_instance=None, error_message=""):
         self.error_message = error_message
@@ -3230,111 +3424,287 @@ class OpenPicons(Screen):
         if self.aborted:
             self.finish(aborted=True)
 
+    def rst1(self):
+        pass
+
     def install(self, string=''):
         if self.aborted:
             self.finish(aborted=True)
         else:
             self.progclear = 0
             self['info'].setText(_('File Downloaded ...'))
-            if os.path.exists(self.dest):
-                self.namel = ''
-                self['info'].setText(_('Install ...'))
+            if os.path.exists(KodilitePcd):
+                self.fdest = KodilitePcd + "/scripts"
+                if fileExists(self.dest):
+                    title = _("Installation")
+                    cmd = "unzip -o -q '%s' -d '%s'" % (self.dest, self.fdest)
+                    self.session.open(tvConsole, _(title), cmdlist=[str(cmd)], closeOnSuccess=False)
+                self['info'].setText(_('Please select ...'))
                 self.downloading = False
                 self['progresstext'].text = ''
                 self['progress'].setValue(self.progclear)
                 self["progress"].hide()
-                self['info'].setText(_('Please select ...'))
-                if os.path.exists("/tmp/unzipped"):
-                    os.system('rm -rf /tmp/unzipped')
-                os.makedirs('/tmp/unzipped')
-                os.system('tar -xvf ' + self.dest + ' -C /tmp/unzipped')
-                path = '/tmp/unzipped'
-                for root, dirs, files in os.walk(path):
-                    for name in dirs:
-                        if not os.path.isdir(os.path.join(path, name)):
-                            continue
-                        self.namel = name
-                # folder is long name.. truk for this
-                path2 = '/tmp/unzipped/' + str(self.namel)
-                for root, dirs, files in os.walk(path2):
-                    for name in files:
-                        Cmd = "cp -rf  '" + path2 + "/" + name + "' " + str(mmkpicon)
-                        os.system(Cmd)
-                info = 'Successfully Picons Installed'
+                info = 'Successfully Script Installed'
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
-def autostart(reason, session=None, **kwargs):
-    """called with reason=1 to during shutdown, with reason=0 at startup?"""
-    print("[Softcam] Started")
-    if reason == 0:
-        print('reason 0')
-        if session is not None:
-            print('session not none')
-            try:
-                print('ok started autostart')
-                if fileExists('/etc/init.d/dccamd'):
-                    os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                if fileExists('/usr/bin/dccamd'):
-                    os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
-                os.system("ln -sf /usr/bin /var/bin")
-                os.system("ln -sf /usr/keys /var/keys")
-                os.system("ln -sf /usr/scce /var/scce")
-                os.system("sleep 2")
-                os.system("/etc/startcam.sh")
-                print("*** running startcam ***")
-            except:
-                print('except autostart')
-            os.system('sleep 2')
-
+class repository(Screen):
+    def __init__(self, session):
+        self.session = session
+        skin = os.path.join(skin_path, 'tvall.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Kodilite by pcd')
+        Screen.__init__(self, session)
+        self.setTitle(self.setup_title)
+        self.list = []
+        self['list'] = tvList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['pth'] = Label('')
+        self['pth'].setText(_('Support on'))
+        self['pform'] = Label('')
+        self['pform'].setText(_('linuxsat-support.com '))
+        self['progress'] = ProgressBar()
+        self["progress"].hide()
+        self['progresstext'] = StaticText()
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button('')
+        self["key_blue"] = Button('')
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.downloading = False
+        self.error_message = ""
+        self.last_recvbytes = 0
+        self.error_message = None
+        self.download = None
+        self.aborted = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
-            print('pass autostart')
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(title_plug)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+
+    def downxmlpage(self):
+        self.url = "http://patbuweb.com/uppy/EnigmaOE2.0/Kodilite/repository"
+        data = make_request(self.url)
+        if PY3:
+            data = six.ensure_str(data)
+        self.names = []
+        self.urls = []
+        try:
+            match = re.compile(regexL, re.DOTALL).findall(data)
+            for url, name, txt in match:
+                if 'zip' in url:
+                    url = "http://patbuweb.com" + str(url)
+                    name = name.replace("%20", " ").replace("-", " ").replace("_", " ").replace(".zip", "")
+                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
+                    name = name + ' - ' + date
+                    self.urls.append(Utils.str_encode(url.strip()))
+                    self.names.append(Utils.str_encode(name.strip()))
+                    self.downloading = True
+                else:
+                    self['info'].setText(_('No File!!'))
+                    self.downloading = False
+            showlist(self.names, self['list'])
+            self['key_green'].show()
+            self['info'].setText(_('Please select'))
+        except Exception as e:
+            print('error: ', str(e))
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer):
+        if answer:
+            if self.downloading is True:
+                idx = self["list"].getSelectionIndex()
+                self.dom = self.names[idx]
+                self.com = self.urls[idx]
+
+                print('1 self.com type=', type(self.com))
+                self.com = six.ensure_binary(self.com)
+                print('2 self.com type=', type(self.com))
+                # if PY3:
+                    # self.com = self.com.encode()
+
+                self.source = self.com.replace(str(self.url), '')
+                self.dest = "/tmp" + self.source
+
+                # from . import Downloader
+                # self.download = Downloader.downloadWithProgress(self.com, self.dest)
+                print('self.com:', self.com)
+                print('self.dest:', self.dest)
+                self.download = downloadWithProgress(self.com, self.dest)
+                self.download.addProgress(self.downloadProgress)
+                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+            else:
+                self.close()
+
+    def downloadProgress(self, recvbytes, totalbytes):
+        self['info'].setText(_('Download in progress...'))
+        self["progress"].show()
+        self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
+        self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
+        self.last_recvbytes = recvbytes
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
+
+    def cancel(self, result=None):
+        self.close(None)
+        return
+
+    def finished(self, result):
+        self['info'].setText(_('Please select ...'))
+        return
+
+    def download_failed(self, failure_instance=None, error_message=""):
+        self.error_message = error_message
+        if error_message == "" and failure_instance is not None:
+            self.error_message = failure_instance.getErrorMessage()
+        self.downloading = False
+        info = 'Download Failed!!! ' + self.error_message
+        self['info'].setText(info)
+        self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+        # self.session.openWithCallback(self.close, MessageBox, _(info), timeout=3, close_on_any_key=True)
+
+    def abort(self):
+        print("aborting", self.url)
+        if self.download:
+            self.download.stop()
+        self.downloading = False
+        self.aborted = True
+
+    def download_finished(self, string=""):
+        if self.aborted:
+            self.finish(aborted=True)
+
+    def rst1(self):
+        pass
+
+    def install(self, string=''):
+        if self.aborted:
+            self.finish(aborted=True)
+        else:
+            self.progclear = 0
+            self['info'].setText(_('File Downloaded ...'))
+            if os.path.exists(KodilitePcd):
+                self.fdest = KodilitePcd + "/repos"
+                if fileExists(self.dest):
+                    title = _("Installation")
+                    cmd = "unzip -o -q '%s' -d '%s'" % (self.dest, self.fdest)
+                    self.session.open(tvConsole, _(title), cmdlist=[str(cmd)], closeOnSuccess=False)
+                self['info'].setText(_('Please select ...'))
+                self.downloading = False
+                self['progresstext'].text = ''
+                self['progress'].setValue(self.progclear)
+                self["progress"].hide()
+                info = 'Successfully Repository Installed'
+                self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
+
+
+class AutoStartTimertvadd:
+
+    def __init__(self, session):
+        self.session = session
+        global _firstStarttvsadd
+        print("*** running AutoStartTimertvadd ***")
+        if _firstStarttvsadd:
+            self.runUpdate()
+
+    def runUpdate(self):
+        print("*** running update ***")
+        try:
+            from . import Update
+            Update.upd_done()
+            _firstStarttvsadd = False
+        except Exception as e:
+            print('error tvaddon', str(e))
+
+
+def autostart(reason, session=None, **kwargs):
+    print("*** running autostart ***")
+    global autoStartTimertvsadd
+    global _firstStarttvsadd
+    if reason == 0:
+        if session is not None:
+            _firstStarttvsadd = True
+            autoStartTimertvsadd = AutoStartTimertvadd(session)
     return
 
 
 def main(session, **kwargs):
     try:
-        session.open(HomeNss)
+        session.open(Hometv)
     except:
+        import traceback
+        traceback.print_exc()
         pass
 
 
 def cfgmain(menuid, **kwargs):
     if menuid == 'mainmenu':
-        return [(_('Nss Addons'), main, 'Nss Addon', 4)]
+        return [(_('TiVuStream Addons'), main, 'AddonPanel', 44)]
     else:
         return []
-
-
-def cfgcam(menuid, **kwargs):
-    if menuid == 'cam':
-        from Tools.BoundFunction import boundFunction
-        return [(_(name_cam),
-                 boundFunction(main2, showExtentionMenuOption=True),
-                 'NSS Softcam Manager',
-                 -1)]
-    else:
-        return []
-
-
-def main2(session, **kwargs):
-    from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-    session.open(NSSCamsManager)
 
 
 def mainmenu(session, **kwargs):
     main(session, **kwargs)
 
 
+def mainm(session, **kwargs):
+    try:
+        from .mmpicon import SelectPicons
+        session.open(SelectPicons)
+    except Exception as e:
+        print('error open plugin', e)
+
+def getversioninfo():
+    currmmversion = '1.3'
+    version_file = '/usr/lib/enigma2/python/Plugins/Extensions/tvaddon/versionmm'
+    if os.path.exists(version_file):
+        try:
+            fp = open(version_file, 'r').readlines()
+            for line in fp:
+                if 'version' in line:
+                    currmmversion = line.split('=')[1].strip()
+        except:
+            pass
+    return (currmmversion)
+
+
+currmmversion = getversioninfo()
+titlem_plug = 'mMark Picons & Skins'
+descm_plugin = 'V.%s - e2skin.blogspot.com' % str(currmmversion)
+icom_path = 'logom.png'
+if not Utils.DreamOS():
+    icom_path = plugin_path + '/res/pics/logom.png'
+
+
 def Plugins(**kwargs):
+    ico_path = 'logo.png'
+    if not os.path.exists('/var/lib/dpkg/status'):
+        ico_path = plugin_path + '/res/pics/logo.png'
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
     result = [PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
-              PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgcam),
-              PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
-    if config.plugins.nssaddon.strtext.value:
+              PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main),
+              PluginDescriptor(name=titlem_plug, description=descm_plugin, where=PluginDescriptor.WHERE_PLUGINMENU, icon=icom_path, fnc=mainm)]
+    if cfg.strtext.value:
         result.append(extDescriptor)
-    if config.plugins.nssaddon.strtmain.value:
+    if cfg.strtmain.value:
         result.append(mainDescriptor)
     return result
 
@@ -3567,3 +3937,4 @@ def TransferBouquetTerrestrialFinal():
     except:
         return False
     return
+# ===== by lululla
