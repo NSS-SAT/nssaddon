@@ -300,27 +300,25 @@ class cccConfig(Screen, ConfigListScreen):
         self.list = []
         ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self['title'] = Label(_(name_plug))
-        # self["paypal"] = Label()
         self['actions'] = ActionMap(['OkCancelActions',
                                      'DirectionActions',
                                      'setupActions',
                                      'ColorActions',
                                      'VirtualKeyboardActions',
-                                     'MenuActions',
-                                     'InfobarChannelSelection'], {'left': self.keyLeft,
-                                                                  'right': self.keyRight,
-                                                                  'ok': self.closex,
-                                                                  'showVirtualKeyboard': self.KeyText,
-                                                                  'green': self.green,
-                                                                  'yellow': self.sendemm,
-                                                                  'blue': self.resetcfg,
-                                                                  'red': self.closex,
-                                                                  'cancel': self.closex,
-                                                                  'back': self.closex}, -1)
+                                     'MenuActions'], {'left': self.keyLeft,
+                                                      'right': self.keyRight,
+                                                      'ok': self.closex,
+                                                      'showVirtualKeyboard': self.KeyText,
+                                                      'green': self.green,
+                                                      'yellow': self.sendemm,
+                                                      'blue': self.resetcfg,
+                                                      'red': self.closex,
+                                                      'cancel': self.closex,
+                                                      'back': self.closex}, -1)
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Force Emm Send'))
         self['key_yellow'] = Button(_('Check Emm Send'))
-        self["key_blue"] = Button(_(''))
+        self["key_blue"] = Button()
         # self['key_green'].hide()
         # self['key_yellow'].hide()
         self['key_blue'].hide()
@@ -328,7 +326,7 @@ class cccConfig(Screen, ConfigListScreen):
         self['description'] = Label('')
         self['description'].setText(_('Wait please...'))
         self.createSetup()
-        # self.onLayoutFinish.append(self.showhide)
+        self.onLayoutFinish.append(self.showhide)
         self.onShown.append(self.layoutFinished)
         # self.onFirstExecBegin.append(self.layoutFinished)
 
