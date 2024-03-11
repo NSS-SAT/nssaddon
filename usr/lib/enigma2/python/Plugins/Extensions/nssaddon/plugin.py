@@ -343,7 +343,7 @@ class nssList(MenuList):
             textfont = int(32)
             self.l.setFont(0, gFont('Regular', textfont))
         else:
-            self.l.setItemHeight(50)
+            self.l.setItemHeight(42)
             textfont = int(24)
             self.l.setFont(0, gFont('Regular', textfont))
 
@@ -357,7 +357,7 @@ def nssListEntry(name, idx):
     res = [name]
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(80, 0), size=(1950, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryText(pos=(80, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
         res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
@@ -2549,6 +2549,8 @@ class nssConfig(Screen, ConfigListScreen):
         self.setup_title = _("Config NSS Addon")
         self.onChangedEntry = []
         self.session = session
+        self.list = []
+        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self.setTitle(self.setup_title)
         self['description'] = Label('')
         self['info'] = Label(_('Config Panel Addon'))
@@ -2567,14 +2569,12 @@ class nssConfig(Screen, ConfigListScreen):
                                           'ActiveCodeActions'], {'cancel': self.extnok,
                                                                  'red': self.extnok,
                                                                  'back': self.close,
-                                                                 # 'left': self.keyLeft,
-                                                                 # 'right': self.keyRight,
+                                                                 'left': self.keyLeft,
+                                                                 'right': self.keyRight,
                                                                  # 'yellow': self.tvUpdate,
                                                                  "showVirtualKeyboard": self.KeyText,
                                                                  'ok': self.Ok_edit,
                                                                  'green': self.msgok}, -1)
-        self.list = []
-        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self.createSetup()
         self.onLayoutFinish.append(self.layoutFinished)
         if self.setInfo not in self['config'].onSelectionChanged:
@@ -2589,7 +2589,6 @@ class nssConfig(Screen, ConfigListScreen):
         return str(zarcffll)
 
     def layoutFinished(self):
-        # self.setTitle(self.setup_title)
         try:
             arkFull = ''
             if self.arckget():
@@ -2616,7 +2615,7 @@ class nssConfig(Screen, ConfigListScreen):
         self.list.append(getConfigListEntry(_('Link in Extensions Menu'), config.plugins.nssaddon.strtext, _("Link in Extensions button")))
         self.list.append(getConfigListEntry(_('Link in Main Menu'), config.plugins.nssaddon.strtmain, _("Link in Main Menu")))
         self["config"].list = self.list
-        self["config"].setList(self.list)
+        self["config"].l.setList(self.list)
         self.setInfo()
 
     def setInfo(self):
@@ -2644,22 +2643,33 @@ class nssConfig(Screen, ConfigListScreen):
         from Screens.Setup import SetupSummary
         return SetupSummary
 
+    def keyLeft(self):
+        ConfigListScreen.keyLeft(self)
+        print("current selection:", self["config"].l.getCurrentSelection())
+        self.createSetup()
+
+    def keyRight(self):
+        ConfigListScreen.keyRight(self)
+        print("current selection:", self["config"].l.getCurrentSelection())
+        self.createSetup()                      
     def msgok(self):
         if os.path.exists(config.plugins.nssaddon.ipkpth.value) is False:
             self.session.open(MessageBox, _('Device not detected!'), MessageBox.TYPE_INFO, timeout=4)
-        for x in self["config"].list:
-            x[1].save()
-        self.session.open(MessageBox, _('Successfully saved configuration'), MessageBox.TYPE_INFO, timeout=4)
-        self.close(True)
+        if self['config'].isChanged():
+            for x in self["config"].list:
+                x[1].save()
+            self.session.open(MessageBox, _('Successfully saved configuration'), MessageBox.TYPE_INFO, timeout=4)
+        else:
+            self.close(True)
 
     def Ok_edit(self):
-        ConfigListScreen.keyOK(self)
+        # ConfigListScreen.keyOK(self)
         sel = self['config'].getCurrent()[1]
-        if sel and sel == config.plugins.nssaddon.mmkpicon:
+        if sel == config.plugins.nssaddon.mmkpicon:
             self.setting = 'mmkpicon'
             mmkpth = config.plugins.nssaddon.mmkpicon.value
             self.openDirectoryBrowser(mmkpth)
-        if sel and sel == config.plugins.nssaddon.ipkpth:
+        if sel == config.plugins.nssaddon.ipkpth:
             self.setting = 'ipkpth'
             ipkpth = config.plugins.nssaddon.ipkpth.value
             self.openDirectoryBrowser(ipkpth)
