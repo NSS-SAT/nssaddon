@@ -12,7 +12,7 @@ from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
 from Components.Label import Label
-from Components.config import ConfigNumber, ConfigSelection, ConfigYesNo
+from Components.config import ConfigNumber, ConfigSelection, ConfigOnOff
 from Components.config import ConfigSubsection, ConfigPassword
 from Components.config import config, ConfigText
 from Components.config import getConfigListEntry, NoSave
@@ -150,7 +150,7 @@ ListAgent = [
           'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25',
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2',
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/534.55.3 (KHTML, like Gecko) Version/5.1.3 Safari/534.53.10',
-          'Mozilla/5.0 (iPad; CPU OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko ) Version/5.1 Mobile/9B176 Safari/7534.48.3'
+          'Mozilla/5.0 (iPad; CPU OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko ) Version/5.1 Mobile/9B176 Safari/7534.48.3',
           ]
 
 
@@ -243,7 +243,7 @@ cfgcam = [('/etc/CCcam.cfg', 'CCcam'),
           ('/etc/tuxbox/config/Oscamicam/oscam.server', 'Oscamicam')]
 
 config.plugins.nssaddon = ConfigSubsection()
-config.plugins.nssaddon.active = ConfigYesNo(default=False)
+config.plugins.nssaddon.active = NoSave(ConfigOnOff(default=False))
 config.plugins.nssaddon.Server = NoSave(ConfigSelection(choices=Serverlive))  # , default=Server1))
 # config.plugins.nssaddon.cfgfile = NoSave(ConfigSelection(default='/etc/CCcam.cfg', choices=[('/etc/CCcam.cfg', _('CCcam')), ('/etc/tuxbox/config/oscam.server', _('Oscam')), ('/etc/tuxbox/config/ncam.server', _('Ncam'))]))
 config.plugins.nssaddon.cfgfile = NoSave(ConfigSelection(choices=cfgcam))
@@ -298,23 +298,7 @@ class cccConfig(Screen, ConfigListScreen):
         self.setup_title = (name_plug)
         self.onChangedEntry = []
         self.list = []
-        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self['title'] = Label(_(name_plug))
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'DirectionActions',
-                                     'setupActions',
-                                     'ColorActions',
-                                     'VirtualKeyboardActions',
-                                     'MenuActions'], {'left': self.keyLeft,
-                                                      'right': self.keyRight,
-                                                      'ok': self.closex,
-                                                      'showVirtualKeyboard': self.KeyText,
-                                                      'green': self.green,
-                                                      'yellow': self.sendemm,
-                                                      'blue': self.resetcfg,
-                                                      'red': self.closex,
-                                                      'cancel': self.closex,
-                                                      'back': self.closex}, -1)
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Force Emm Send'))
         self['key_yellow'] = Button(_('Check Emm Send'))
@@ -325,10 +309,27 @@ class cccConfig(Screen, ConfigListScreen):
         self['info'] = Label('')
         self['description'] = Label('')
         self['description'].setText(_('Wait please...'))
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'setupActions',
+                                     'ColorActions',
+                                     'VirtualKeyboardActions',
+                                     'DirectionActions',
+                                     'MenuActions'], {'left': self.keyLeft,
+                                                      'right': self.keyRight,
+                                                      'ok': self.closex,
+                                                      'showVirtualKeyboard': self.KeyText,
+                                                      'green': self.green,
+                                                      'yellow': self.sendemm,
+                                                      'blue': self.resetcfg,
+                                                      'red': self.closex,
+                                                      'cancel': self.closex,
+                                                      'back': self.closex}, -1)
+        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
         self.createSetup()
-        self.onLayoutFinish.append(self.showhide)
-        self.onShown.append(self.layoutFinished)
         # self.onFirstExecBegin.append(self.layoutFinished)
+        # self.onShown.append(self.layoutFinished)
+        self.onLayoutFinish.append(self.showhide)
+        self.onLayoutFinish.append(self.layoutFinished)
 
     def sendemm(self):
         self.showhide()
@@ -348,8 +349,8 @@ class cccConfig(Screen, ConfigListScreen):
                     if not access(self.cmd1, X_OK):
                         os.chmod(self.cmd1, 493)
                     # os.system(self.cmd1)
-                    import subprocess
-                    # subprocess.check_output(['bash', self.cmd1])   
+                    # import subprocess
+                    # subprocess.check_output(['bash', self.cmd1])
                     try:
                         subprocess.check_output(['bash', self.cmd1])
                         self.session.open(MessageBox, _('Card Updated!'), MessageBox.TYPE_INFO, timeout=5)
@@ -392,7 +393,7 @@ class cccConfig(Screen, ConfigListScreen):
             if not access(self.cmd1, X_OK):
                 os.chmod(self.cmd1, 493)
             # os.system(self.cmd1)
-            import subprocess
+            # import subprocess
             # subprocess.check_output(['bash', self.cmd1])
             try:
                 subprocess.check_output(['bash', self.cmd1])
@@ -439,13 +440,14 @@ class cccConfig(Screen, ConfigListScreen):
             self.session.open(MessageBox, _('Reset') + ' ' + putlbl, type=MessageBox.TYPE_INFO, timeout=8)
 
     def showhide(self):
-        if config.plugins.nssaddon.active.value is True:
+        if config.plugins.nssaddon.active.value:
             self['key_green'].setText(buttn)
             self['key_green'].show()
             self['key_yellow'].setText(_('Get Link'))
             self['key_yellow'].show()
             self['key_blue'].setText(_('Reset'))
             self['key_blue'].show()
+        # if config.plugins.nssaddon.active.value is False:
         else:
             # self['key_green'].hide()
             self['key_green'].setText('Force Emm Send')
@@ -454,6 +456,14 @@ class cccConfig(Screen, ConfigListScreen):
             self['key_yellow'].setText('Check Emm Send')
             self['key_blue'].setText('')
             self['key_blue'].hide()
+        # else:
+            # self['key_green'].setText(buttn)
+            # self['key_green'].show()
+            # self['key_yellow'].setText(_('Get Link'))
+            # self['key_yellow'].show()
+            # self['key_blue'].setText(_('Reset'))
+            # self['key_blue'].show()
+        return
 
     def green(self):
         if config.plugins.nssaddon.active.value is True:
@@ -478,7 +488,7 @@ class cccConfig(Screen, ConfigListScreen):
                 os.chmod(self.cmd1, 493)
             # self.cmd2 = '. ' + self.cmd1
             # os.system(self.cmd1)
-            import subprocess
+            # import subprocess
             # subprocess.check_output(['bash', self.cmd1])
             try:
                 subprocess.check_output(['bash', self.cmd1])
@@ -501,7 +511,7 @@ class cccConfig(Screen, ConfigListScreen):
                 self.session.open(MessageBox, _("No Action!\nFile no exist /tmp/emm.txt"), MessageBox.TYPE_INFO, timeout=5)
 
     def layoutFinished(self):
-        self.showhide()
+        # self.showhide()
         self.setTitle(self.setup_title)
         self['description'].setText(_('Select Your Choice'))
 
@@ -531,6 +541,7 @@ class cccConfig(Screen, ConfigListScreen):
         print('current selection:', self['config'].l.getCurrentSelection())
         putlblcfg()
         self.createSetup()
+        self.showhide()
         self.getcl()
 
     def keyRight(self):
@@ -538,6 +549,7 @@ class cccConfig(Screen, ConfigListScreen):
         print('current selection:', self['config'].l.getCurrentSelection())
         putlblcfg()
         self.createSetup()
+        self.showhide()
         self.getcl()
 
     def VirtualKeyBoardCallback(self, callback=None):
@@ -553,6 +565,7 @@ class cccConfig(Screen, ConfigListScreen):
     def changedEntry(self):
         for x in self.onChangedEntry:
             x()
+        self.showhide()
 
     def getCurrentEntry(self):
         return self['config'].getCurrent()[0]

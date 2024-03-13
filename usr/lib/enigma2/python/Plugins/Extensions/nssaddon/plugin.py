@@ -16,7 +16,7 @@ from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
 from Components.config import config, ConfigSubsection, ConfigYesNo
-from Components.config import ConfigDirectory, ConfigSelection, getConfigListEntry
+from Components.config import ConfigDirectory, getConfigListEntry
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText
@@ -217,16 +217,16 @@ def ReloadBouquets():
         print("wGET: bouquets reloaded...")
 
 
-def mountipkpth():
-    ipkpth = []
-    if os.path.isfile('/proc/mounts'):
-        for line in open('/proc/mounts'):
-            if '/dev/sd' in line or '/dev/disk/by-uuid/' in line or '/dev/mmc' in line or '/dev/mtdblock' in line:
-                drive = line.split()[1].replace('\\040', ' ') + '/'
-                if drive not in ipkpth:
-                    ipkpth.append(drive)
-    ipkpth.append('/tmp')
-    return ipkpth
+# def mountipkpth():
+    # ipkpth = []
+    # if os.path.isfile('/proc/mounts'):
+        # for line in open('/proc/mounts'):
+            # if '/dev/sd' in line or '/dev/disk/by-uuid/' in line or '/dev/mmc' in line or '/dev/mtdblock' in line:
+                # drive = line.split()[1].replace('\\040', ' ') + '/'
+                # if drive not in ipkpth:
+                    # ipkpth.append(drive)
+    # ipkpth.append('/tmp')
+    # return ipkpth
 
 
 AgentRequest = RequestAgent()
@@ -236,7 +236,7 @@ config.plugins.nssaddon = ConfigSubsection()
 config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
 config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
 config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
-config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
+# config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
 currversion = '1.0.0'
 title_plug = 'NSS Addon Panel V. %s' % currversion
@@ -2147,7 +2147,8 @@ class NssIPK(Screen):
         self.setup_title = (name_plug)
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
-        self.ipkpth = str(config.plugins.nssaddon.ipkpth.value)
+        # self.ipkpth = str(config.plugins.nssaddon.ipkpth.value)
+        self.ipkpth = '/tmp'
         self.list = []
         self.names = []
         self['list'] = nssList([])
@@ -2160,7 +2161,7 @@ class NssIPK(Screen):
         self['title'] = Label(self.setup_title)
         self['pform'] = Label('')
         self['info'] = Label('...')
-        self['pth'] = Label(_('Path %s (Set path folder from config)\nPut .ipk .tar.gz .deb .zip and install') % self.ipkpth)
+        self['pth'] = Label(_('Path /tmp\nPut .ipk .tar.gz .deb .zip and install'))
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
@@ -2597,7 +2598,7 @@ class nssConfig(Screen, ConfigListScreen):
             img = os.popen('cat /etc/issue').read().strip('\n\r')
             arc = os.popen('uname -m').read().strip('\n\r')
             ifg = os.popen('wget -qO - ifconfig.me').read().strip('\n\r')
-            img = img.replace('\l', '')
+            img = img.replace('\\l', '')
             libs = os.popen('ls -l /usr/lib/libss*.*').read().strip('\n\r')
             if libs:
                 libsssl = libs
@@ -2611,7 +2612,7 @@ class nssConfig(Screen, ConfigListScreen):
         self.editListEntry = None
         self.list = []
         self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), config.plugins.nssaddon.mmkpicon, _("Configure folder containing picons files")))
-        self.list.append(getConfigListEntry(_('Addon Installation Path'), config.plugins.nssaddon.ipkpth, _("Path to the addon installation folder")))
+        # self.list.append(getConfigListEntry(_('Addon Installation Path'), config.plugins.nssaddon.ipkpth, _("Path to the addon installation folder")))
         self.list.append(getConfigListEntry(_('Link in Extensions Menu'), config.plugins.nssaddon.strtext, _("Link in Extensions button")))
         self.list.append(getConfigListEntry(_('Link in Main Menu'), config.plugins.nssaddon.strtmain, _("Link in Main Menu")))
         self["config"].list = self.list
@@ -2651,10 +2652,11 @@ class nssConfig(Screen, ConfigListScreen):
     def keyRight(self):
         ConfigListScreen.keyRight(self)
         print("current selection:", self["config"].l.getCurrentSelection())
-        self.createSetup()                      
+        self.createSetup()
+
     def msgok(self):
-        if os.path.exists(config.plugins.nssaddon.ipkpth.value) is False:
-            self.session.open(MessageBox, _('Device not detected!'), MessageBox.TYPE_INFO, timeout=4)
+        # if os.path.exists(config.plugins.nssaddon.ipkpth.value) is False:
+            # self.session.open(MessageBox, _('Device not detected!'), MessageBox.TYPE_INFO, timeout=4)
         if self['config'].isChanged():
             for x in self["config"].list:
                 x[1].save()
@@ -2669,10 +2671,10 @@ class nssConfig(Screen, ConfigListScreen):
             self.setting = 'mmkpicon'
             mmkpth = config.plugins.nssaddon.mmkpicon.value
             self.openDirectoryBrowser(mmkpth)
-        if sel == config.plugins.nssaddon.ipkpth:
-            self.setting = 'ipkpth'
-            ipkpth = config.plugins.nssaddon.ipkpth.value
-            self.openDirectoryBrowser(ipkpth)
+        # if sel == config.plugins.nssaddon.ipkpth:
+            # self.setting = 'ipkpth'
+            # ipkpth = config.plugins.nssaddon.ipkpth.value
+            # self.openDirectoryBrowser(ipkpth)
         else:
             pass
 
@@ -2696,8 +2698,8 @@ class nssConfig(Screen, ConfigListScreen):
         if path is not None:
             if self.setting == 'mmkpicon':
                 config.plugins.nssaddon.mmkpicon.setValue(path)
-            if self.setting == 'ipkpth':
-                config.plugins.nssaddon.ipkpth.setValue(path)
+            # if self.setting == 'ipkpth':
+                # config.plugins.nssaddon.ipkpth.setValue(path)
         return
 
     def KeyText(self):
