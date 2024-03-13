@@ -37,30 +37,30 @@ title_plug = 'NSS Softcam Manager V. %s' % currversion
 if not os.path.exists('/etc/clist.list'):
     with open('/etc/clist.list', 'w'):
         print('/etc/clist.list as been create')
-# try:
-    # from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
-# except ImportError:
-    # pass
+try:
+    from Plugins.Extensions.CCcamInfo.plugin import CCcamInfoMain
+except ImportError:
+    pass
 
-# try:
-    # from Plugins.Extensions.OscamStatus.plugin import OscamStatus
-# except ImportError:
-    # pass
+try:
+    from Plugins.Extensions.OscamStatus.plugin import OscamStatus
+except ImportError:
+    pass
 
-# try:
-    # from Screens.OScamInfo import OSCamInfo
-# except ImportError:
-    # pass
+try:
+    from Screens.OScamInfo import OSCamInfo
+except ImportError:
+    pass
 
-# try:
-    # from Screens.CCcamInfo import CCcamInfoMain
-# except ImportError:
-    # pass
+try:
+    from Screens.CCcamInfo import CCcamInfoMain
+except ImportError:
+    pass
 
-# try:
-    # from Screens.OScamInfo import OscamInfoMenu
-# except ImportError:
-    # pass
+try:
+    from Screens.OScamInfo import OscamInfoMenu
+except ImportError:
+    pass
 
 
 def main(session, **kwargs):
