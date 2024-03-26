@@ -2194,7 +2194,7 @@ class NssIPK(Screen):
                     if name.endswith('.ipk') or name.endswith('.deb') or name.endswith('.zip') or name.endswith('.tar.gz') or name.endswith('.tar'):
                         self.names.append(name)
         self["list"].l.setList(self.list)
-        if len(self.names) > 0:
+        if len(self.names) >= 0:
             self['info'].setText(_('Please install ...'))
             self['key_green'].show()
             self['key_blue'].show()
@@ -2202,7 +2202,7 @@ class NssIPK(Screen):
         self.getfreespace()
 
     def msgipkrmv(self, answer=None):
-        if len(self.names) > 0:
+        if len(self.names) >= 0:
             idx = self['list'].getSelectionIndex()
             self.sel = self.names[idx]
             if answer is None:
@@ -3280,47 +3280,14 @@ class OpenPicons(Screen):
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
-# def autostart(reason, session=None, **kwargs):
-    # """called with reason=1 to during shutdown, with reason=0 at startup?"""
-    # print("[Softcam] Started")
-    # if reason == 0:
-        # print('reason 0')
-        # if session is not None:
-            # print('session not none')
-            # try:
-                # print('ok started autostart')
-                # if fileExists('/etc/init.d/dccamd'):
-                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                # if fileExists('/usr/bin/dccamd'):
-                    # os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
-                # os.system("ln -sf /usr/bin /var/bin")
-                # os.system("ln -sf /usr/keys /var/keys")
-                # os.system("ln -sf /usr/scce /var/scce")
-                # os.system("sleep 2")
-                # os.system("/etc/startcam.sh")
-                # print("*** running startcam ***")
-            # except:
-                # print('except autostart')
-            # os.system('sleep 2')
-
-        # else:
-            # print('pass autostart')
-    # return
-
-
-def autostartsoftcam(reason, session=None, **kwargs):
+def autostart(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
-    # global DreamCC_auto
-    # global autoStartTimertvsman
-    # global _firstStarttvsman
     if reason == 0:
         print('reason 0')
         if session is not None:
+            print('session not none')
             try:
-                # if fileExists('/etc/init.d/dccamd'):
-                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                # DreamCC_auto = DreamCCAuto()
                 print('ok started autostart')
                 if fileExists('/etc/init.d/dccamd'):
                     os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
@@ -3330,13 +3297,16 @@ def autostartsoftcam(reason, session=None, **kwargs):
                 os.system("ln -sf /usr/keys /var/keys")
                 os.system("ln -sf /usr/scce /var/scce")
                 os.system("sleep 2")
-                self.cmd2 = 'chmod 755 /etc/startcam.sh &'
-                os.system(self.cmd2)
-                os.system("/etc/startcam.sh &")                
+                os.system("/etc/startcam.sh")
                 print("*** running startcam ***")
             except:
                 print('except autostart')
             os.system('sleep 2')
+
+        else:
+            print('pass autostart')
+    return
+
 
 def main(session, **kwargs):
     try:
@@ -3375,8 +3345,7 @@ def mainmenu(session, **kwargs):
 def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
-    result = [PluginDescriptor(name=_(name_plug), description=_(title_plug), where=[PluginDescriptor.WHERE_AUTOSTART, PluginDescriptor.WHERE_SESSIONSTART], needsRestart=True, fnc=autostartsoftcam),
-              # PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+    result = [PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgcam),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:
