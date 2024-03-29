@@ -23,8 +23,9 @@ from Components.MultiContent import MultiContentEntryText
 from Components.MultiContent import MultiContentEntryPixmapAlphaTest
 from Components.Pixmap import Pixmap
 from Components.ProgressBar import ProgressBar
-from Components.Sources.List import List
+# from Components.ScrollLabel import ScrollLabel
 from Components.Sources.Progress import Progress
+from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
 from Screens.Console import Console as tvConsole
@@ -2145,7 +2146,7 @@ class NssInstall(Screen):
 class NssIPK(Screen):
     def __init__(self, session, title=None, cmdlist=None, finishedCallback=None, closeOnSuccess=False):
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'NssIPK.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = (name_plug)
@@ -2155,7 +2156,6 @@ class NssIPK(Screen):
         self.ipkpth = '/tmp'
         self.list = []
         self.names = []
-        self['list'] = nssList([])
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Install'))
         self['key_green'].hide()
@@ -2163,12 +2163,9 @@ class NssIPK(Screen):
         self["key_blue"] = Button('Remove')
         self['key_blue'].hide()
         self['title'] = Label(self.setup_title)
-        self['pform'] = Label('')
-        self['info'] = Label('...')
-        self['pth'] = Label(_('Path /tmp\nPut .ipk .tar.gz .deb .zip and install'))
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+        self['info'] = Label('...')  
+        self['list'] = nssList([])  
+        self['info1'] = Label(_('Path /tmp\nPut .ipk .tar.gz .deb .zip and install'))
         self['actions'] = ActionMap(['OkCancelActions',
                                      'WizardActions',
                                      'ColorActions',
@@ -2186,6 +2183,7 @@ class NssIPK(Screen):
 
     def refreshlist(self):
         self.list = []
+        self.names = []
         del self.names[:]
         del self.list[:]
         for x in self.list:
@@ -2196,9 +2194,11 @@ class NssIPK(Screen):
                 files.sort()
                 for name in files:
                     if name.endswith('.ipk') or name.endswith('.deb') or name.endswith('.zip') or name.endswith('.tar.gz') or name.endswith('.tar'):
+                        print('name ipk:', str(name))
                         self.names.append(name)
-        self["list"].l.setList(self.list)
-        if len(self.names) > 0:
+                        
+                self.names.sort(key=lambda x: x, reverse=False)
+        if len(self.names) >= 0:
             self['info'].setText(_('Please install ...'))
             self['key_green'].show()
             self['key_blue'].show()
@@ -2206,7 +2206,7 @@ class NssIPK(Screen):
         self.getfreespace()
 
     def msgipkrmv(self, answer=None):
-        if len(self.names) > 0:
+        if len(self.names) >= 0:
             idx = self['list'].getSelectionIndex()
             self.sel = self.names[idx]
             if answer is None:
