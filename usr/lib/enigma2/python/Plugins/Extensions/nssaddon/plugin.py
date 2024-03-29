@@ -239,9 +239,9 @@ config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
 # config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
 mmkpicon = config.plugins.nssaddon.mmkpicon.value.strip()
 currversion = '1.0.0'
-title_plug = 'NSS Addon Panel V. %s' % currversion
-name_plug = 'NSS Addon Panel'
-name_cam = 'NSS Softcam Manager'
+title_plug = 'NSS Addon V. %s' % currversion
+name_plug = 'NSS Addon'
+name_cam = 'NSS Cam Manager'
 category = 'lululla.xml'
 set = 0
 pblk = 'aHR0cHM6Ly93d3cubWVkaWFmaXJlLmNvbS9hcGkvMS41L2ZvbGRlci9nZXRfY29udGVudC5waHA/Zm9sZGVyX2tleT1vdnowNG1ycHpvOXB3JmNvbnRlbnRfdHlwZT1mb2xkZXJzJmNodW5rX3NpemU9MTAwMCZyZXNwb25zZV9mb3JtYXQ9anNvbg== '
@@ -490,8 +490,10 @@ class HomeNss(Screen):
     def NSSCamsManager(self):
         tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
         if os.path.exists(tvman):
-            from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            self.session.openWithCallback(self.close, NSSCamsManager)
+            # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
+            # self.session.openWithCallback(self.close, NSSCamsManager)
+            from Plugins.Extensions.Manager.plugin import Manager
+            self.session.openWithCallback(self.close, Manager)            
         else:
             self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
 
@@ -583,7 +585,7 @@ class nssCategories(Screen):
         self['key_green'] = Button(_('Extensions Installer'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button(_('Uninstall'))
-        self["key_blue"] = Button(_("NSS Softcam Manager"))
+        self["key_blue"] = Button(_("NSS Cam Manager"))
         # self['key_blue'].hide()
         self.Update = False
         self.downloading = False
@@ -631,8 +633,10 @@ class nssCategories(Screen):
     def NSSCamsManager(self):
         tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
         if os.path.exists(tvman):
-            from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            self.session.openWithCallback(self.close, NSSCamsManager)
+            # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
+            # self.session.openWithCallback(self.close, NSSCamsManager)
+            from Plugins.Extensions.Manager.plugin import Manager
+            self.session.openWithCallback(self.close, Manager)
         else:
             self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
 
@@ -2194,7 +2198,7 @@ class NssIPK(Screen):
                     if name.endswith('.ipk') or name.endswith('.deb') or name.endswith('.zip') or name.endswith('.tar.gz') or name.endswith('.tar'):
                         self.names.append(name)
         self["list"].l.setList(self.list)
-        if len(self.names) >= 0:
+        if len(self.names) > 0:
             self['info'].setText(_('Please install ...'))
             self['key_green'].show()
             self['key_blue'].show()
@@ -2202,7 +2206,7 @@ class NssIPK(Screen):
         self.getfreespace()
 
     def msgipkrmv(self, answer=None):
-        if len(self.names) >= 0:
+        if len(self.names) > 0:
             idx = self['list'].getSelectionIndex()
             self.sel = self.names[idx]
             if answer is None:
@@ -2547,7 +2551,7 @@ class nssConfig(Screen, ConfigListScreen):
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         Screen.__init__(self, session)
-        self.setup_title = _("Config NSS Addon")
+        self.setup_title = _("NSS Addon Config")
         self.onChangedEntry = []
         self.session = session
         self.list = []
@@ -3280,14 +3284,47 @@ class OpenPicons(Screen):
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
-def autostart(reason, session=None, **kwargs):
+# def autostart(reason, session=None, **kwargs):
+    # """called with reason=1 to during shutdown, with reason=0 at startup?"""
+    # print("[Softcam] Started")
+    # if reason == 0:
+        # print('reason 0')
+        # if session is not None:
+            # print('session not none')
+            # try:
+                # print('ok started autostart')
+                # if fileExists('/etc/init.d/dccamd'):
+                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                # if fileExists('/usr/bin/dccamd'):
+                    # os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
+                # os.system("ln -sf /usr/bin /var/bin")
+                # os.system("ln -sf /usr/keys /var/keys")
+                # os.system("ln -sf /usr/scce /var/scce")
+                # os.system("sleep 2")
+                # os.system("/etc/startcam.sh")
+                # print("*** running startcam ***")
+            # except:
+                # print('except autostart')
+            # os.system('sleep 2')
+
+        # else:
+            # print('pass autostart')
+    # return
+
+
+def autostartsoftcam(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
+    # global DreamCC_auto
+    # global autoStartTimertvsman
+    # global _firstStarttvsman
     if reason == 0:
         print('reason 0')
         if session is not None:
-            print('session not none')
             try:
+                # if fileExists('/etc/init.d/dccamd'):
+                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
+                # DreamCC_auto = DreamCCAuto()
                 print('ok started autostart')
                 if fileExists('/etc/init.d/dccamd'):
                     os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
@@ -3297,16 +3334,13 @@ def autostart(reason, session=None, **kwargs):
                 os.system("ln -sf /usr/keys /var/keys")
                 os.system("ln -sf /usr/scce /var/scce")
                 os.system("sleep 2")
-                os.system("/etc/startcam.sh")
+                self.cmd2 = 'chmod 755 /etc/startcam.sh &'
+                os.system(self.cmd2)
+                os.system("/etc/startcam.sh &")                
                 print("*** running startcam ***")
             except:
                 print('except autostart')
             os.system('sleep 2')
-
-        else:
-            print('pass autostart')
-    return
-
 
 def main(session, **kwargs):
     try:
@@ -3327,16 +3361,17 @@ def cfgcam(menuid, **kwargs):
         from Tools.BoundFunction import boundFunction
         return [(_(name_cam),
                  boundFunction(main2, showExtentionMenuOption=True),
-                 'NSS Softcam Manager',
+                 'NSS Cam Manager',
                  -1)]
     else:
         return []
 
 
 def main2(session, **kwargs):
-    from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-    session.open(NSSCamsManager)
-
+    # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
+    # session.open(NSSCamsManager)
+    from Plugins.Extensions.Manager.plugin import Manager
+    self.session.openWithCallback(self.close, Manager)   
 
 def mainmenu(session, **kwargs):
     main(session, **kwargs)
@@ -3345,7 +3380,8 @@ def mainmenu(session, **kwargs):
 def Plugins(**kwargs):
     extDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_EXTENSIONSMENU, icon=ico_path, fnc=main)
     mainDescriptor = PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_MENU, icon=ico_path, fnc=cfgmain)
-    result = [PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
+    result = [PluginDescriptor(name=_(name_plug), description=_(title_plug), where=[PluginDescriptor.WHERE_AUTOSTART, PluginDescriptor.WHERE_SESSIONSTART], needsRestart=True, fnc=autostartsoftcam),
+              # PluginDescriptor(name=name_plug, description=title_plug, where=[PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart),
               PluginDescriptor(name=name_cam, description="Start Your Cam", where=[PluginDescriptor.WHERE_MENU], fnc=cfgcam),
               PluginDescriptor(name=name_plug, description=title_plug, where=PluginDescriptor.WHERE_PLUGINMENU, icon=ico_path, fnc=main)]
     if config.plugins.nssaddon.strtext.value:

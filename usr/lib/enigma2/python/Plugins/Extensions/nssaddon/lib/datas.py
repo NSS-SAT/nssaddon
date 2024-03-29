@@ -21,6 +21,7 @@ from Screens.Screen import Screen
 from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.Directories import fileExists
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
+from Components.Sources.StaticText import StaticText
 from .. import _
 from random import choice
 from enigma import eTimer
@@ -47,14 +48,11 @@ def b64decoder(s):
     import base64
     s = str(s).strip()
     try:
-        # return base64.b64decode(s)
         outp = base64.b64decode(s)
         print('outp1 ', outp)
         if PY3:
             outp = outp.decode('utf-8')
             print('outp2 ', outp)
-        return outp
-
     except TypeError:
         padding = len(s) % 4
         if padding == 1:
@@ -69,7 +67,7 @@ def b64decoder(s):
         if PY3:
             outp = outp.decode('utf-8')
             print('outp2 ', outp)
-        return outp
+    return outp
 
 
 sl = 'slManager'
@@ -232,6 +230,8 @@ Serverlive = [
               ('aHR0cHM6Ly9jY2NhbS1wcmVtaXVtLmNvL2ZyZWUtY2NjYW0v', 'Server07'),
               ('aHR0cHM6Ly93d3cuY2NjYW1iaXJkMi5jb20vZnJlZWNjY2FtLnBocA==', 'Server08'),
               ('aHR0cHM6Ly9jY2NhbWZyZWUuY28vZnJlZS9nZXQucGhw', 'Server9'),
+              ('aHR0cHM6Ly9jY2NhbWZyZWkuY29tL2ZyZWUvZ2V0LnBocA==', 'Server10'),
+              ('aHR0cHM6Ly9jY2NhbWF6b24uY29tL2ZyZWUvZ2V0LnBocA==', 'Server11'),                                                                               
               ]
 
 # cfgcam = [(cccamPath(), 'CCcam'),
@@ -243,7 +243,7 @@ cfgcam = [('/etc/CCcam.cfg', 'CCcam'),
           ('/etc/tuxbox/config/Oscamicam/oscam.server', 'Oscamicam')]
 
 config.plugins.nssaddon = ConfigSubsection()
-config.plugins.nssaddon.active = NoSave(ConfigOnOff(default=False))
+config.plugins.nssaddon.active = ConfigOnOff(default=False)
 config.plugins.nssaddon.Server = NoSave(ConfigSelection(choices=Serverlive))  # , default=Server1))
 # config.plugins.nssaddon.cfgfile = NoSave(ConfigSelection(default='/etc/CCcam.cfg', choices=[('/etc/CCcam.cfg', _('CCcam')), ('/etc/tuxbox/config/oscam.server', _('Oscam')), ('/etc/tuxbox/config/ncam.server', _('Ncam'))]))
 config.plugins.nssaddon.cfgfile = NoSave(ConfigSelection(choices=cfgcam))
@@ -288,29 +288,26 @@ def putlblcfg():
 putlblcfg()
 
 
-class cccConfig(Screen, ConfigListScreen):
+class cccConfig(ConfigListScreen, Screen):
     def __init__(self, session):
         Screen.__init__(self, session)
-        self.session = session
+        # self.session = session
         skin = os.path.join(skin_path, 'cccConfig.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = (name_plug)
+        self['title'] = Label(_(name_plug))
+        self["key_red"] = StaticText(_("Back"))
+        self["key_green"] = StaticText("")
+        self["key_yellow"] = StaticText("")
+        self["key_blue"] = StaticText("")
+        self['description'] = Label('')
+        self['info'] = Label('')
+        self['info'].setText(_('Wait please...'))
         self.onChangedEntry = []
         self.list = []
-        self['title'] = Label(_(name_plug))
-        self['key_red'] = Button(_('Back'))
-        self['key_green'] = Button(_('Force Emm Send'))
-        self['key_yellow'] = Button(_('Check Emm Send'))
-        self["key_blue"] = Button()
-        # self['key_green'].hide()
-        # self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['info'] = Label('')
-        self['description'] = Label('')
-        self['description'].setText(_('Wait please...'))
+        ConfigListScreen.__init__(self, self.list, session=session, on_change=self.changedEntry)
         self['actions'] = ActionMap(['OkCancelActions',
-                                     'setupActions',
                                      'ColorActions',
                                      'VirtualKeyboardActions',
                                      'DirectionActions',
@@ -324,15 +321,35 @@ class cccConfig(Screen, ConfigListScreen):
                                                       'red': self.closex,
                                                       'cancel': self.closex,
                                                       'back': self.closex}, -1)
-        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
+
+        if config.plugins.nssaddon.active.value:
+            self['key_green'].setText(buttn)
+            # self['key_green'].show()
+            self['key_yellow'].setText(_('Get Link'))
+            # self['key_yellow'].show()
+            self['key_blue'].setText(_('Reset'))
+            # self['key_blue'].show()
+        else:
+            self['key_green'].setText('Force Emm Send')
+            # self['key_green'].show()
+            self['key_yellow'].setText('Check Emm Send')
+            self['key_blue'].setText('')
+            # self['key_blue'].hide()
+
         self.createSetup()
-        # self.onFirstExecBegin.append(self.layoutFinished)
-        # self.onShown.append(self.layoutFinished)
-        self.onLayoutFinish.append(self.showhide)
+
+        if self.selectionChanged not in self["config"].onSelectionChanged:
+            self["config"].onSelectionChanged.append(self.selectionChanged)
+        self.selectionChanged()
+
         self.onLayoutFinish.append(self.layoutFinished)
 
+    def layoutFinished(self):
+        # self.showhide()
+        self.setTitle(self.setup_title)
+        self['info'].setText(_('Select Your Choice'))
+
     def sendemm(self):
-        self.showhide()
         if config.plugins.nssaddon.active.value is True:
             self.getcl()
         else:
@@ -348,9 +365,6 @@ class cccConfig(Screen, ConfigListScreen):
                     from os import access, X_OK
                     if not access(self.cmd1, X_OK):
                         os.chmod(self.cmd1, 493)
-                    # os.system(self.cmd1)
-                    # import subprocess
-                    # subprocess.check_output(['bash', self.cmd1])
                     try:
                         subprocess.check_output(['bash', self.cmd1])
                         self.session.open(MessageBox, _('Card Updated!'), MessageBox.TYPE_INFO, timeout=5)
@@ -392,9 +406,6 @@ class cccConfig(Screen, ConfigListScreen):
             from os import access, X_OK
             if not access(self.cmd1, X_OK):
                 os.chmod(self.cmd1, 493)
-            # os.system(self.cmd1)
-            # import subprocess
-            # subprocess.check_output(['bash', self.cmd1])
             try:
                 subprocess.check_output(['bash', self.cmd1])
                 self.session.open(MessageBox, _('Card Updated!'), MessageBox.TYPE_INFO, timeout=5)
@@ -403,7 +414,6 @@ class cccConfig(Screen, ConfigListScreen):
                 self.session.open(MessageBox, _('Card Not Updated!'), MessageBox.TYPE_INFO, timeout=5)
             os.system('sleep 5')
             if not os.path.exists('/tmp/emm.txt'):
-                # import wget
                 outp = base64.b64decode(sss)
                 url = str(outp)
                 # cmd = 'wget -q --no-use-server-timestamps --no-clobber --timeout=5' + url + ' -O /tmp/emm.txt'
@@ -433,7 +443,7 @@ class cccConfig(Screen, ConfigListScreen):
         self.close()
 
     def resetcfg(self):
-        if config.plugins.nssaddon.active.value is True:
+        if config.plugins.nssaddon.active.value:
             import shutil
             shutil.copy2(data_path + rstcfg, putlbl)
             os.system('chmod -R 755 %s' % putlbl)
@@ -442,31 +452,16 @@ class cccConfig(Screen, ConfigListScreen):
     def showhide(self):
         if config.plugins.nssaddon.active.value:
             self['key_green'].setText(buttn)
-            self['key_green'].show()
             self['key_yellow'].setText(_('Get Link'))
-            self['key_yellow'].show()
             self['key_blue'].setText(_('Reset'))
-            self['key_blue'].show()
-        # if config.plugins.nssaddon.active.value is False:
         else:
-            # self['key_green'].hide()
             self['key_green'].setText('Force Emm Send')
-            self['key_green'].show()
-            # self['key_yellow'].hide()
             self['key_yellow'].setText('Check Emm Send')
             self['key_blue'].setText('')
-            self['key_blue'].hide()
-        # else:
-            # self['key_green'].setText(buttn)
-            # self['key_green'].show()
-            # self['key_yellow'].setText(_('Get Link'))
-            # self['key_yellow'].show()
-            # self['key_blue'].setText(_('Reset'))
-            # self['key_blue'].show()
         return
 
     def green(self):
-        if config.plugins.nssaddon.active.value is True:
+        if config.plugins.nssaddon.active.value:
             if putlbl == '/etc/CCcam.cfg':
                 self.CCcam()
             elif putlbl == '/etc/tuxbox/config/oscam.server':
@@ -486,10 +481,6 @@ class cccConfig(Screen, ConfigListScreen):
             from os import access, X_OK
             if not access(self.cmd1, X_OK):
                 os.chmod(self.cmd1, 493)
-            # self.cmd2 = '. ' + self.cmd1
-            # os.system(self.cmd1)
-            # import subprocess
-            # subprocess.check_output(['bash', self.cmd1])
             try:
                 subprocess.check_output(['bash', self.cmd1])
             except subprocess.CalledProcessError as e:
@@ -510,16 +501,11 @@ class cccConfig(Screen, ConfigListScreen):
             else:
                 self.session.open(MessageBox, _("No Action!\nFile no exist /tmp/emm.txt"), MessageBox.TYPE_INFO, timeout=5)
 
-    def layoutFinished(self):
-        # self.showhide()
-        self.setTitle(self.setup_title)
-        self['description'].setText(_('Select Your Choice'))
-
     def createSetup(self):
         self.editListEntry = None
         self.list = []
         self.list.append(getConfigListEntry(_('Activate Insert line in Config File:'), config.plugins.nssaddon.active, _('If Active: Download/Reset Server Config')))
-        if config.plugins.nssaddon.active.getValue():
+        if config.plugins.Manager.active:
             self.list.append(getConfigListEntry(_('Server Config'), config.plugins.nssaddon.cfgfile, putlbl))
             self.list.append(getConfigListEntry(_('Server Link'), config.plugins.nssaddon.Server, _('Select Get Link')))
             self.list.append(getConfigListEntry(_('Server URL'), config.plugins.nssaddon.hostaddress, _('Server Url i.e. 012.345.678.900')))
@@ -541,7 +527,6 @@ class cccConfig(Screen, ConfigListScreen):
         print('current selection:', self['config'].l.getCurrentSelection())
         putlblcfg()
         self.createSetup()
-        self.showhide()
         self.getcl()
 
     def keyRight(self):
@@ -549,8 +534,15 @@ class cccConfig(Screen, ConfigListScreen):
         print('current selection:', self['config'].l.getCurrentSelection())
         putlblcfg()
         self.createSetup()
-        self.showhide()
         self.getcl()
+
+    def keyDown(self):
+        self['config'].instance.moveSelection(self['config'].instance.moveDown)
+        self.createSetup()
+
+    def keyUp(self):
+        self['config'].instance.moveSelection(self['config'].instance.moveUp)
+        self.createSetup()
 
     def VirtualKeyBoardCallback(self, callback=None):
         if callback is not None and len(callback):
@@ -562,10 +554,14 @@ class cccConfig(Screen, ConfigListScreen):
         from Screens.Setup import SetupSummary
         return SetupSummary
 
+    def selectionChanged(self):
+        # self["info"].setText(self["config"].getCurrent()[2])
+        self.showhide()
+
     def changedEntry(self):
         for x in self.onChangedEntry:
             x()
-        self.showhide()
+        self.selectionChanged()
 
     def getCurrentEntry(self):
         return self['config'].getCurrent()[0]
@@ -709,7 +705,6 @@ class cccConfig(Screen, ConfigListScreen):
                 url1 = re.findall('host: (.+?)<br> port: (.+?) <br>.*?user:(.+?)<br>.*?pass: (.+?)\n', data)
 
             elif 'cccamx' in data.lower():
-                # ">
                 url1 = re.findall('C: (.+?) (.+?) (.+?) (.+?)\n', data)
 
             elif 'cccamiptv' in data.lower():
@@ -744,6 +739,12 @@ class cccConfig(Screen, ConfigListScreen):
 
             elif '15days' in data.lower():
                 url1 = re.findall('">C: (.*?) (.*?) (.*?) (.+?)</th></tr>', data)
+
+            elif 'cccamfrei' in data.lower():
+                url1 = re.findall('<h1>C: (.+?) (.+?) (.+?) (.+?)\n', data)
+
+            elif 'cccamazon' in data.lower():
+                url1 = re.findall('<h1>C: (.+?) (.+?) (.+?) (.+?)\n', data)
             print('===========data=========', url1)
 
             if url1 != '':
