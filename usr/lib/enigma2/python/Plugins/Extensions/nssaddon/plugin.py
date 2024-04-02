@@ -15,8 +15,9 @@ from .lib.Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
-from Components.config import config, ConfigSubsection, ConfigYesNo
-from Components.config import ConfigDirectory, getConfigListEntry
+from Components.config import config, getConfigListEntry, ConfigIP
+from Components.config import ConfigYesNo, ConfigSubsection
+from Components.config import ConfigDirectory, ConfigText, ConfigInteger
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText
@@ -3371,7 +3372,9 @@ def main2(session, **kwargs):
     # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
     # session.open(NSSCamsManager)
     from Plugins.Extensions.Manager.plugin import Manager
-    self.session.openWithCallback(self.close, Manager)   
+    # self.session.openWithCallback(self.close, Manager)   
+    session.open(Manager)
+
 
 def mainmenu(session, **kwargs):
     main(session, **kwargs)
