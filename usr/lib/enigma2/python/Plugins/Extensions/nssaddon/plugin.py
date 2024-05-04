@@ -72,7 +72,7 @@ if PY3:
 else:
     from urllib2 import urlopen, Request, URLError
     from urlparse import urlparse
-
+Host = 'https://www.nonsolosat.net'
 
 if sys.version_info >= (2, 7, 9):
     try:
@@ -112,7 +112,7 @@ def status_site():
     global status
     import requests
     try:
-        Host = 'https://www.nonsolosat.net'
+        
         # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
         response = requests.get(Host, verify=False, timeout=5)
         if response.status_code == 200:
@@ -275,8 +275,8 @@ elif screenwidth.width() == 1920:
     skin_path = plugin_path + '/res/skins/fhd/'
 else:
     skin_path = plugin_path + '/res/skins/hd/'
-if os.path.exists('/var/lib/dpkg/info'):
-    skin_path = skin_path + 'dreamOs/'
+# if os.path.exists('/var/lib/dpkg/info'):
+    # skin_path = skin_path + 'dreamOs/'
 
 os.system('rm -fr ' + plugin_path + '/temp/*')
 if mmkpicon.endswith('/'):
