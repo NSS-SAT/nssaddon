@@ -15,9 +15,9 @@ from .lib.Downloader import downloadWithProgress
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
-from Components.config import config, getConfigListEntry, ConfigIP
+from Components.config import config, getConfigListEntry
 from Components.config import ConfigYesNo, ConfigSubsection
-from Components.config import ConfigDirectory, ConfigText, ConfigInteger
+from Components.config import ConfigDirectory
 from Components.Label import Label
 from Components.MenuList import MenuList
 from Components.MultiContent import MultiContentEntryText
@@ -112,7 +112,6 @@ def status_site():
     global status
     import requests
     try:
-        
         # response = requests.get(Host, headers={'User-Agent': RequestAgent()}, verify=False)
         response = requests.get(Host, verify=False, timeout=5)
         if response.status_code == 200:
@@ -261,9 +260,18 @@ ico_path = os.path.join(plugin_path, 'logo.png')
 no_cover = os.path.join(plugin_path, 'no_coverArt.png')
 _firstStarttvspro = True
 ee2ldb = '/etc/enigma2/lamedb'
+plugin_temp = os.path.join(plugin_path, 'temp')
+if not os.path.exists(plugin_temp):
+    try:
+        os.makedirs(plugin_temp)
+    except OSError as e:
+        print(('Error creating directory %s:\n%s') % (plugin_temp, str(e)))
+ServiceListNewLamedb = plugin_path + '/temp/ServiceListNewLamedb'
+TrasponderListNewLamedb = plugin_path + '/temp/TrasponderListNewLamedb'
 ServOldLamedb = plugin_path + '/temp/ServiceListOldLamedb'
 TransOldLamedb = plugin_path + '/temp/TrasponderListOldLamedb'
 TerChArch = plugin_path + '/temp/TerrestrialChannelListArchive'
+
 # SelBack = plugin_path + '/SelectBack'
 # SSelect = plugin_path + '/Select'
 # DIGTV = 'eeee0000'
@@ -471,11 +479,21 @@ class HomeNss(Screen):
             del self.menu_list[0]
         list = []
         idx = 0
+                                                
         for x in Panel_list:
+                                                   
+                                        
             list.append(nssListEntry(x, idx))
             self.menu_list.append(x)
             idx += 1
         self['list'].setList(list)
+                               
+                                 
+                                                    
+                                                                             
+                 
+                                                           
+                                    
         self.timer2 = eTimer()
         if os.path.exists('/var/lib/dpkg/info'):
             self.timer2_conn = self.timer2.timeout.connect(self.__layoutFinished)
@@ -495,7 +513,7 @@ class HomeNss(Screen):
             # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
             # self.session.openWithCallback(self.close, NSSCamsManager)
             from Plugins.Extensions.Manager.plugin import Manager
-            self.session.openWithCallback(self.close, Manager)            
+            self.session.openWithCallback(self.close, Manager)
         else:
             self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
 
@@ -567,6 +585,9 @@ class HomeNss(Screen):
             return
 
 
+                                 
+                  
+                                          
 class nssCategories(Screen):
     def __init__(self, session, category):
         self.session = session
@@ -2164,8 +2185,8 @@ class NssIPK(Screen):
         self["key_blue"] = Button('Remove')
         self['key_blue'].hide()
         self['title'] = Label(self.setup_title)
-        self['info'] = Label('...')  
-        self['list'] = nssList([])  
+        self['info'] = Label('...')
+        self['list'] = nssList([])
         self['info1'] = Label(_('Path /tmp\nPut .ipk .tar.gz .deb .zip and install'))
         self['actions'] = ActionMap(['OkCancelActions',
                                      'WizardActions',
@@ -2197,7 +2218,6 @@ class NssIPK(Screen):
                     if name.endswith('.ipk') or name.endswith('.deb') or name.endswith('.zip') or name.endswith('.tar.gz') or name.endswith('.tar'):
                         print('name ipk:', str(name))
                         self.names.append(name)
-                        
                 self.names.sort(key=lambda x: x, reverse=False)
         if len(self.names) >= 0:
             self['info'].setText(_('Please install ...'))
@@ -2331,6 +2351,8 @@ class NssRemove(Screen):
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = (name_plug)
+                                                    
+                                                                              
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
@@ -2589,6 +2611,8 @@ class nssConfig(Screen, ConfigListScreen):
     def arckget(self):
         zarcffll = ''
         try:
+                                                                                                                                   
+                 
             zarcffll = os.popen('opkg print-architecture | grep -iE "arm|aarch64|mips|cortex|h4|sh_4"').read().strip('\n\r')
         except Exception as e:
             print("Error ", e)
@@ -2613,9 +2637,13 @@ class nssConfig(Screen, ConfigListScreen):
             print("Error ", e)
             self['info'].setText(_(':) by Lululla '))
 
+                       
+                                   
+
     def createSetup(self):
         self.editListEntry = None
         self.list = []
+                                                                                                                           
         self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), config.plugins.nssaddon.mmkpicon, _("Configure folder containing picons files")))
         # self.list.append(getConfigListEntry(_('Addon Installation Path'), config.plugins.nssaddon.ipkpth, _("Path to the addon installation folder")))
         self.list.append(getConfigListEntry(_('Link in Extensions Menu'), config.plugins.nssaddon.strtext, _("Link in Extensions button")))
@@ -2970,8 +2998,13 @@ class MMarkPiconsf(Screen):
         self.onLayoutFinish.append(self.getfreespace)
 
     def getfreespace(self):
+                                       
+                       
+                      
         try:
             fspace = Utils.freespace()
+                                                          
+                                                                                                           
             self['pform'].setText(str(fspace))
         except Exception as e:
             print(e)
@@ -2981,10 +3014,38 @@ class MMarkPiconsf(Screen):
         getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
 
     def errorLoad(self):
+                                                                                      
+                                            
+                                              
         self['info'].setText(_('Try again later ...'))
+                                                                                                                                             
+                                
+
         self.downloading = False
 
     def _gotPageLoad(self, data):
+                                                                                                          
+
+                    
+                                   
+                         
+                                
+                                
+                           
+
+                                           
+                        
+                                     
+
+                   
+            
+
+                                 
+                        
+                                     
+             
+                              
+                                                          
         r = data
         if PY3:
             r = six.ensure_str(data)
@@ -3335,13 +3396,14 @@ def autostartsoftcam(reason, session=None, **kwargs):
                 os.system("ln -sf /usr/keys /var/keys")
                 os.system("ln -sf /usr/scce /var/scce")
                 os.system("sleep 2")
-                self.cmd2 = 'chmod 755 /etc/startcam.sh &'
-                os.system(self.cmd2)
-                os.system("/etc/startcam.sh &")                
+                cmd2 = 'chmod 755 /etc/startcam.sh &'
+                os.system(cmd2)
+                os.system("/etc/startcam.sh &")
                 print("*** running startcam ***")
             except:
                 print('except autostart')
             os.system('sleep 2')
+
 
 def main(session, **kwargs):
     try:
@@ -3372,7 +3434,7 @@ def main2(session, **kwargs):
     # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
     # session.open(NSSCamsManager)
     from Plugins.Extensions.Manager.plugin import Manager
-    # self.session.openWithCallback(self.close, Manager)   
+    # self.session.openWithCallback(self.close, Manager)
     session.open(Manager)
 
 
