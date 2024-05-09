@@ -137,12 +137,6 @@ def checkMyFile(url):
         req.add_header('X-Requested-With', 'XMLHttpRequest')
         page = urlopen(req)
         r = page.read()
-        # if PY3:
-            # n1 = r.find('"download_link'.encode(), 0)
-            # n2 = r.find('downloadButton'.encode(), n1)
-        # else:
-            # n1 = r.find('"download_link', 0)
-            # n2 = r.find('downloadButton', n1)
         n1 = r.find('"download_link', 0)
         n2 = r.find('downloadButton', n1)
         r2 = r[n1:n2]
@@ -216,18 +210,6 @@ def ReloadBouquets():
         os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=2 > /dev/null 2>&1 &")
         os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=4 > /dev/null 2>&1 &")
         print("wGET: bouquets reloaded...")
-
-
-# def mountipkpth():
-    # ipkpth = []
-    # if os.path.isfile('/proc/mounts'):
-        # for line in open('/proc/mounts'):
-            # if '/dev/sd' in line or '/dev/disk/by-uuid/' in line or '/dev/mmc' in line or '/dev/mtdblock' in line:
-                # drive = line.split()[1].replace('\\040', ' ') + '/'
-                # if drive not in ipkpth:
-                    # ipkpth.append(drive)
-    # ipkpth.append('/tmp')
-    # return ipkpth
 
 
 AgentRequest = RequestAgent()
@@ -479,21 +461,11 @@ class HomeNss(Screen):
             del self.menu_list[0]
         list = []
         idx = 0
-                                                
         for x in Panel_list:
-                                                   
-                                        
             list.append(nssListEntry(x, idx))
             self.menu_list.append(x)
             idx += 1
         self['list'].setList(list)
-                               
-                                 
-                                                    
-                                                                             
-                 
-                                                           
-                                    
         self.timer2 = eTimer()
         if os.path.exists('/var/lib/dpkg/info'):
             self.timer2_conn = self.timer2.timeout.connect(self.__layoutFinished)
@@ -585,9 +557,6 @@ class HomeNss(Screen):
             return
 
 
-                                 
-                  
-                                          
 class nssCategories(Screen):
     def __init__(self, session, category):
         self.session = session
@@ -1941,9 +1910,6 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation canceled!'))
                 else:
                     cmd = "opkg install --force-reinstall %s > /dev/null" % down
-                    # cmd = "wget -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
-                    # if "https" in str(self.com):
-                        # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';opkg install --force-reinstall %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
             elif self.com.endswith('.zip'):
@@ -1982,28 +1948,18 @@ class NssInstall(Screen):
                     terrestrial_rest()
                     self.session.open(tvConsole, _('SETTING - install: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    # return
                 elif 'picon' in self.dom.lower():
                     cmd = ["unzip -o -q %s -d %s > /dev/null" % (down, str(mmkpicon))]
-                    # cmd = ["wget -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
-                    # if "https" in str(self.com):
-                        # cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s';unzip -o -q %s -d %s > /dev/null" % (RequestAgent(), str(self.com), self.dest, self.dest, str(mmkpicon))]
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
-                    # return
                 else:
                     self['info'].setText(_('Downloading the selected file in /tmp') + self.dom + _('... please wait'))
                     cmd = ["wget --no-cache --no-dns-cache -U '%s' -c '%s' -O '%s --post-data='action=purge' > /dev/null' " % (RequestAgent(), str(self.com), down)]
-                    # cmd = ["wget -U '%s' -c '%s' -O '%s > /dev/null' " % (RequestAgent(), str(self.com), self.dest)]
-                    # if "https" in str(self.com):
-                        # cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s'" % (RequestAgent(), str(self.com), self.dest)]
-                    # self.session.open(tvConsole, _('Downloading: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self.session.open(tvConsole, _('Downloading: %s') % self.dom, cmd, closeOnSuccess=False)
                     self['info'].setText(_('Download done !!!'))
                     self.session.open(MessageBox, _('Download file in /tmp successful!'), MessageBox.TYPE_INFO, timeout=5)
                     # self.timer.start(1000, True)
                     self['info'].setText(_('Download file in /tmp successful!!'))
-                    # return
             else:
                 self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
             self.timer.start(3000, 1)
@@ -2045,19 +2001,13 @@ class NssInstall(Screen):
             self.dom = self.names[idx]
             self.com = self.urls[idx]
             print('1 self.com type=', type(self.com))
-            # self.com = six.ensure_binary(self.com)
-            # print('2 self.com type=', type(self.com))
-            # if PY3:
-                # self.com = self.com.encode()
             self.downplug = self.com.split("/")[-1]
             self.dest = '/tmp/' + str(self.downplug)
             if os.path.exists(self.dest):
                 os.remove(self.dest)
             if self.com is not None:
-                # print('self.com not none', self.com)
                 extensionlist = self.com.split('.')
                 extension = extensionlist[-1].lower()
-                # print('extension', extension)
                 if len(extensionlist) > 1:
                     tar = extensionlist[-2].lower()
                 if extension in ["gz", "bz2"] and tar == "tar":
@@ -2073,21 +2023,13 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
                     return
                 if extension == "deb" and not os.path.exists('/var/lib/dpkg/status'):
-                    # if not os.path.exists('/var/lib/dpkg/status'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
-                # elif self.com.endswith(".ipk"):
                 elif extension == ".ipk" and os.path.exists('/var/lib/dpkg/info'):
-                    # if os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
-                # if os.path.exists('/var/lib/dpkg/info'):
-                    # self.session.open(MessageBox, _('There is currently a problem with this image.\nBetter not to download.\nTry installing directly with the OK button!'), MessageBox.TYPE_INFO, timeout=5)
-                    # self['info'].setText(_('Download canceled!'))
-                    # return
-                # else:
                 self.download = downloadWithProgress(self.com, self.dest)
                 self.download.addProgress(self.downloadProgress)
                 self.download.start().addCallback(self.install).addErrback(self.download_failed)
@@ -2351,8 +2293,6 @@ class NssRemove(Screen):
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = (name_plug)
-                                                    
-                                                                              
         Screen.__init__(self, session)
         self.setTitle(self.setup_title)
         self.list = []
@@ -2611,8 +2551,6 @@ class nssConfig(Screen, ConfigListScreen):
     def arckget(self):
         zarcffll = ''
         try:
-                                                                                                                                   
-                 
             zarcffll = os.popen('opkg print-architecture | grep -iE "arm|aarch64|mips|cortex|h4|sh_4"').read().strip('\n\r')
         except Exception as e:
             print("Error ", e)
@@ -2637,13 +2575,10 @@ class nssConfig(Screen, ConfigListScreen):
             print("Error ", e)
             self['info'].setText(_(':) by Lululla '))
 
-                       
-                                   
-
     def createSetup(self):
         self.editListEntry = None
         self.list = []
-                                                                                                                           
+
         self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), config.plugins.nssaddon.mmkpicon, _("Configure folder containing picons files")))
         # self.list.append(getConfigListEntry(_('Addon Installation Path'), config.plugins.nssaddon.ipkpth, _("Path to the addon installation folder")))
         self.list.append(getConfigListEntry(_('Link in Extensions Menu'), config.plugins.nssaddon.strtext, _("Link in Extensions button")))
@@ -2688,8 +2623,6 @@ class nssConfig(Screen, ConfigListScreen):
         self.createSetup()
 
     def msgok(self):
-        # if os.path.exists(config.plugins.nssaddon.ipkpth.value) is False:
-            # self.session.open(MessageBox, _('Device not detected!'), MessageBox.TYPE_INFO, timeout=4)
         if self['config'].isChanged():
             for x in self["config"].list:
                 x[1].save()
@@ -2698,16 +2631,11 @@ class nssConfig(Screen, ConfigListScreen):
             self.close(True)
 
     def Ok_edit(self):
-        # ConfigListScreen.keyOK(self)
         sel = self['config'].getCurrent()[1]
         if sel == config.plugins.nssaddon.mmkpicon:
             self.setting = 'mmkpicon'
             mmkpth = config.plugins.nssaddon.mmkpicon.value
             self.openDirectoryBrowser(mmkpth)
-        # if sel == config.plugins.nssaddon.ipkpth:
-            # self.setting = 'ipkpth'
-            # ipkpth = config.plugins.nssaddon.ipkpth.value
-            # self.openDirectoryBrowser(ipkpth)
         else:
             pass
 
@@ -2998,13 +2926,8 @@ class MMarkPiconsf(Screen):
         self.onLayoutFinish.append(self.getfreespace)
 
     def getfreespace(self):
-                                       
-                       
-                      
         try:
             fspace = Utils.freespace()
-                                                          
-                                                                                                           
             self['pform'].setText(str(fspace))
         except Exception as e:
             print(e)
@@ -3014,38 +2937,10 @@ class MMarkPiconsf(Screen):
         getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
 
     def errorLoad(self):
-                                                                                      
-                                            
-                                              
         self['info'].setText(_('Try again later ...'))
-                                                                                                                                             
-                                
-
         self.downloading = False
 
     def _gotPageLoad(self, data):
-                                                                                                          
-
-                    
-                                   
-                         
-                                
-                                
-                           
-
-                                           
-                        
-                                     
-
-                   
-            
-
-                                 
-                        
-                                     
-             
-                              
-                                                          
         r = data
         if PY3:
             r = six.ensure_str(data)
@@ -3346,47 +3241,13 @@ class OpenPicons(Screen):
                 self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
 
-# def autostart(reason, session=None, **kwargs):
-    # """called with reason=1 to during shutdown, with reason=0 at startup?"""
-    # print("[Softcam] Started")
-    # if reason == 0:
-        # print('reason 0')
-        # if session is not None:
-            # print('session not none')
-            # try:
-                # print('ok started autostart')
-                # if fileExists('/etc/init.d/dccamd'):
-                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                # if fileExists('/usr/bin/dccamd'):
-                    # os.system("mv /usr/bin/dccamd /usr/bin/dccamdOrig &")
-                # os.system("ln -sf /usr/bin /var/bin")
-                # os.system("ln -sf /usr/keys /var/keys")
-                # os.system("ln -sf /usr/scce /var/scce")
-                # os.system("sleep 2")
-                # os.system("/etc/startcam.sh")
-                # print("*** running startcam ***")
-            # except:
-                # print('except autostart')
-            # os.system('sleep 2')
-
-        # else:
-            # print('pass autostart')
-    # return
-
-
 def autostartsoftcam(reason, session=None, **kwargs):
     """called with reason=1 to during shutdown, with reason=0 at startup?"""
     print("[Softcam] Started")
-    # global DreamCC_auto
-    # global autoStartTimertvsman
-    # global _firstStarttvsman
     if reason == 0:
         print('reason 0')
         if session is not None:
             try:
-                # if fileExists('/etc/init.d/dccamd'):
-                    # os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
-                # DreamCC_auto = DreamCCAuto()
                 print('ok started autostart')
                 if fileExists('/etc/init.d/dccamd'):
                     os.system('mv /etc/init.d/dccamd /etc/init.d/dccamdOrig &')
@@ -3514,10 +3375,6 @@ def StartSavingTerrestrialChannels():
             if x.find('eeee') != -1:
                 return file
                 break
-            # if x.find('eeee0000') != -1:
-                # if x.find('82000') == -1 or x.find('c0000') == -1:
-                    # return file
-                    # break
         return
 
     def ResearchBouquetTerrestrial(search):
