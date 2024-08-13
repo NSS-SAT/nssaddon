@@ -22,12 +22,10 @@ import shutil
 # code open to everyone. by Lululla
 # ===============================================================================
 
-
 try:
     from xml.etree.cElementTree import parse
 except ImportError:
     from xml.etree.ElementTree import parse
-
 # NAME Digitale Terrestre
 # plugin_path = os.path.dirname(sys.modules[__name__].__file__)
 plugin_path = '/usr/lib/enigma2/python/Plugins/Extensions/nssaddon'
@@ -42,7 +40,7 @@ e2etc = '/etc/enigma2'
 ee2ldb = '/etc/enigma2/lamedb'
 
 
-def ReloadBouquets(x):
+def ReloadBouquets():
     print('\n----Reloading bouquets----\n')
     try:
         from enigma import eDVBDB
@@ -52,13 +50,6 @@ def ReloadBouquets(x):
 
     # print("\n----Reloading Iptv----")
     # copy_files_to_enigma2
-
-    global setx
-    if x == 1:
-        setx = 0
-        print("\n----Reloading Terrestrial----")
-        terrestrial_rest()
-
     if eDVBDB:
         db = eDVBDB.getInstance()
         if db:
@@ -250,7 +241,7 @@ class LCN:
         self.ClearDoubleMarker(self.bouquetfile)
 
     def reloadBouquets(self):
-        ReloadBouquets(0)
+        ReloadBouquets()
 
 
 def terrestrial():
@@ -344,7 +335,7 @@ def lcnstart():
         lcn.read()
         if len(lcn.lcnlist) >= 1:
             lcn.writeBouquet()
-            ReloadBouquets(0)
+            ReloadBouquets()
     return
 
 

@@ -3,7 +3,7 @@
 
 # --------------------#
 #   coded by Lululla  #
-#      24/11/2023     #
+#      11/08/2024     #
 # --------------------#
 # imported from tvAddon Panel
 from __future__ import print_function
@@ -11,18 +11,27 @@ from . import _, wgetsts
 from .Console import Console as tvConsole
 from .lib import Utils
 from .lib.Utils import RequestAgent
-from .lib.Lcn import LCN
 from .lib.Downloader import downloadWithProgress
+from .lib.Lcn import (
+    LCN,
+    terrestrial,
+    terrestrial_rest,
+    ReloadBouquets,
+    keepiptv,
+)
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
-from Components.config import (config, getConfigListEntry)
-from Components.config import (ConfigYesNo, ConfigSubsection)
-from Components.config import ConfigSelection
+from Components.config import (
+    config,
+    getConfigListEntry,
+    ConfigYesNo,
+    configfile,
+    ConfigSubsection,
+)
 from Components.Label import Label
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryText
-from Components.MultiContent import MultiContentEntryPixmapAlphaTest
+from Components.MultiContent import (MultiContentEntryText, MultiContentEntryPixmapAlphaTest)
 from Components.Pixmap import Pixmap
 from Components.ProgressBar import ProgressBar
 # from Components.ScrollLabel import ScrollLabel
@@ -30,35 +39,33 @@ from Components.Sources.Progress import Progress
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
 from Plugins.Plugin import PluginDescriptor
-# from Screens.Console import Console as tvConsole
-from Screens.LocationBox import LocationBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Screens.Standby import TryQuitMainloop
-from Screens.VirtualKeyBoard import VirtualKeyBoard
-from Tools.Directories import SCOPE_PLUGINS
-from Tools.Directories import (fileExists, resolveFilename)
-# from Tools.Downloader import downloadWithProgress
-from enigma import (RT_HALIGN_LEFT, RT_VALIGN_CENTER)
-from enigma import (loadPNG, gFont)
-from enigma import eTimer
-from enigma import getDesktop
-from enigma import (eListboxPythonMultiContent, eConsoleAppContainer)
-from os import chmod
-from os import (listdir, mkdir)
+# from Screens.VirtualKeyBoard import VirtualKeyBoard
+from Tools.Directories import (SCOPE_PLUGINS, fileExists, resolveFilename)
+from enigma import (
+    RT_HALIGN_LEFT,
+    RT_VALIGN_CENTER,
+    loadPNG,
+    gFont,
+    eTimer,
+    getDesktop,
+    eListboxPythonMultiContent,
+    eConsoleAppContainer,
+)
+from os import chmod, listdir, mkdir
 from twisted.web.client import (downloadPage, getPage)
 import codecs
+import glob
 import os
 import re
-import sys
 import shutil
-import ssl
-import glob
 import six
+import ssl
 import subprocess
-import json
-from datetime import datetime
-
+import sys
+from xml.dom import minidom
 
 global skin_path, sets, category
 # mmkpicon = config.usage.picon_dir.value()
@@ -74,7 +81,7 @@ if PY3:
 else:
     from urllib2 import (urlopen, Request, URLError)
     from urlparse import urlparse
-Host = 'https://www.nonsolosat.net'
+
 
 if sys.version_info >= (2, 7, 9):
     try:
@@ -87,6 +94,10 @@ try:
     wgetsts()
 except:
     pass
+
+# linuxsat panel
+epk = 'https://github.com/Belfagor2005/upload/raw/main/fill/addons_2024.xml'
+Host = 'https://www.nonsolosat.net'
 
 
 def ssl_urlopen(url):
@@ -166,15 +177,15 @@ def make_req(url):
         response = requests.get(url, verify=False, timeout=5)
         if response.status_code == 200:
             link = requests.get(url, headers={'User-Agent': RequestAgent()}, timeout=10, verify=False, stream=True).text
-        return link
+            # return link
     except ImportError:
         req = Request(url)
         req.add_header('User-Agent', 'E2 Plugin nss Panel')
         response = urlopen(req, None, 10)
         link = response.read().decode('utf-8')
         response.close()
-        return link
-    return
+        # return link
+    return link
 
 
 def check_gzip(url):
@@ -200,24 +211,6 @@ def check_gzip(url):
     except Exception as e:
         print(e)
         return None
-
-
-def ReloadBouquets():
-    from enigma import eDVBDB
-    print("\n----Reloading bouquets----")
-    global sets
-    if sets == 1:
-        sets = 0
-        print("\n----Reloading Terrestrial----")
-        terrestrial_rest()
-    if eDVBDB:
-        eDVBDB.getInstance().reloadServicelist()
-        eDVBDB.getInstance().reloadBouquets()
-        print("eDVBDB: bouquets reloaded...")
-    else:
-        os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=2 > /dev/null 2>&1 &")
-        os.system("wget -qO - http://127.0.0.1/web/servicelistreload?mode=4 > /dev/null 2>&1 &")
-        print("wGET: bouquets reloaded...")
 
 
 AgentRequest = RequestAgent()
@@ -248,7 +241,6 @@ xml_path = Utils.b64decoder(data_xml)
 plugin_path = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
 ico_path = os.path.join(plugin_path, 'logo.png')
 no_cover = os.path.join(plugin_path, 'no_coverArt.png')
-_firstStarttvspro = True
 ee2ldb = '/etc/enigma2/lamedb'
 plugin_temp = os.path.join(plugin_path, 'temp')
 if not os.path.exists(plugin_temp):
@@ -261,7 +253,6 @@ TrasponderListNewLamedb = plugin_path + '/temp/TrasponderListNewLamedb'
 ServOldLamedb = plugin_path + '/temp/ServiceListOldLamedb'
 TransOldLamedb = plugin_path + '/temp/TrasponderListOldLamedb'
 TerChArch = plugin_path + '/temp/TerrestrialChannelListArchive'
-
 # SelBack = plugin_path + '/SelectBack'
 # SSelect = plugin_path + '/Select'
 # DIGTV = 'eeee0000'
@@ -273,8 +264,6 @@ elif screenwidth.width() == 1920:
     skin_path = plugin_path + '/res/skins/fhd/'
 else:
     skin_path = plugin_path + '/res/skins/hd/'
-# if os.path.exists('/var/lib/dpkg/info'):
-    # skin_path = skin_path + 'dreamOs/'
 
 os.system('rm -fr ' + plugin_path + '/temp/*')
 if mmkpicon.endswith('/'):
@@ -285,50 +274,22 @@ if not os.path.exists(mmkpicon):
     except OSError as e:
         print(('Error creating directory %s:\n%s') % (mmkpicon, str(e)))
 
-
-Panel_list = [
- _('LULULLA CORNER'),
- _('DAILY PICONS'),
- _('DAILY SETTINGS'),
- _('SETTING CHANNEL NSS'),
- _('DEPENDENCIES'),
- _('DRIVERS'),
- _('PLUGIN BACKUP'),
- _('PLUGIN EPG'),
- _('PLUGIN EMULATORS CAMS'),
- _('PLUGIN GAME'),
- _('PLUGIN MULTIBOOT'),
- _('PLUGIN MULTIMEDIA'),
- _('PLUGIN PICONS'),
- _('PLUGIN PPANEL'),
- _('PLUGIN SETTINGS PANEL'),
- _('PLUGIN SCRIPT'),
- _('PLUGIN SKINS'),
- _('PLUGIN SPORT'),
- _('PLUGIN UTILITY'),
- _('PLUGIN WEATHER')]
-
 Panel_list2 = [
- ('SAVE DTT BOUQUET'),
- ('RESTORE DTT BOUQUET'),
- ('UPDATE SATELLITES.XML'),
- ('UPDATE TERRESTRIAL.XML'),
- ('SETTINGS BI58'),
- ('SETTINGS CIEFP'),
- ('SETTINGS CYRUS'),
- ('SETTINGS MANUTEK'),
- # ('SETTINGS MILENKA61'),
- ('SETTINGS MORPHEUS'),
- ('SETTINGS PREDRAG'),
- ('SETTINGS VHANNIBAL'),
- ('SETTINGS VHANNIBAL 2')
-]
+    ('SAVE DTT BOUQUET'),
+    ('RESTORE DTT BOUQUET'),
+    ('UPDATE SATELLITES.XML'),
+    ('UPDATE TERRESTRIAL.XML'),
+    ('SETTINGS CIEFP'),
+    ('SETTINGS MANUTEK'),
+    ('SETTINGS MORPHEUS'),
+    ('SETTINGS VHANNIBAL'),
+    ('SETTINGS VHANNIBAL 2')]
 
 Panel_list3 = [
- _('MMARK PICONS BLACK'),
- _('MMARK PICONS TRANSPARENT'),
- _('MMARK PICONS MOVIE'),
- _('OPEN PICONS')]
+    _('MMARK PICONS BLACK'),
+    _('MMARK PICONS TRANSPARENT'),
+    _('MMARK PICONS MOVIE'),
+    _('OPEN PICONS')]
 
 
 class nssList(MenuList):
@@ -343,8 +304,8 @@ class nssList(MenuList):
             textfont = int(32)
             self.l.setFont(0, gFont('Regular', textfont))
         else:
-            self.l.setItemHeight(42)
-            textfont = int(24)
+            self.l.setItemHeight(40)
+            textfont = int(22)
             self.l.setFont(0, gFont('Regular', textfont))
 
 
@@ -357,27 +318,13 @@ def nssListEntry(name, idx):
     res = [name]
     if screenwidth.width() == 2560:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(80, 0), size=(1200, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryText(pos=(80, 0), size=(1200, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     elif screenwidth.width() == 1920:
         res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     else:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(50, 0), size=(500, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    return res
-
-
-def oneListEntry(name):
-    res = [name]
-    if screenwidth.width() == 2560:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(10, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(80, 0), size=(1950, 60), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    elif screenwidth.width() == 1920:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(70, 0), size=(1000, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
-    else:
-        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 10), size=(40, 40), png=loadPNG(pngs)))
-        res.append(MultiContentEntryText(pos=(50, 0), size=(500, 50), font=0, text=name, color=0xa6d1fe, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
+        res.append(MultiContentEntryPixmapAlphaTest(pos=(3, 0), size=(40, 40), png=loadPNG(pngs)))
+        res.append(MultiContentEntryText(pos=(50, 0), size=(500, 40), font=0, text=name, flags=RT_HALIGN_LEFT | RT_VALIGN_CENTER))
     return res
 
 
@@ -386,20 +333,24 @@ def showlistNss(data, list):
     plist = []
     for line in data:
         name = data[icount]
-        plist.append(oneListEntry(name))
+        plist.append(nssListEntry(name, icount))
         icount += 1
         list.setList(plist)
 
 
 class HomeNss(Screen):
+
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = (name_plug)
-        Screen.__init__(self, session)
-        self['list'] = nssList([])
+        # self['list'] = nssList([])
+
+        self['list'] = MenuList([])
+        self.epk = epk
         self['key_red'] = Button(_('Exit'))
         self['key_green'] = Button(_('Extensions Installer'))
         self['key_yellow'] = Button(_('Uninstall'))
@@ -424,8 +375,14 @@ class HomeNss(Screen):
                                                            'red': self.closerm,
                                                            'back': self.closerm,
                                                            'cancel': self.closerm}, -1)
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downloadxmlpage)
+        else:
+            self.timer.callback.append(self.downloadxmlpage)
+        self.timer.start(500, 1)
         self.onFirstExecBegin.append(self.check_dependencies)
-        self.onLayoutFinish.append(self.updateMenuList)
+        self.onLayoutFinish.append(self.__layoutFinished)
 
     def __layoutFinished(self):
         if status_site():
@@ -436,14 +393,73 @@ class HomeNss(Screen):
             self['statusgreen'].hide()
             self['statusred'].show()
             self['status'].setText('SERVER OFF')
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self['info'].setText(_('Please select ...'))
+
+    def downloadxmlpage(self):
+        url = epk
+        if PY3:
+            url = url.encode()
+        getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
+
+    def errorLoad(self, error):
+        print('are here error:', str(error))
+        self['info'].setText(_('Addons Download Failure\nNo internet connection or server down !'))
+        # self.downloading = False
+
+    def _gotPageLoad(self, data):
+        self.xml = data
+        # print('self.xml=', self.xml)
+        self.list = []
+        self.names = []
+        try:
+            if self.xml:
+                # self.names.append('Setting Channel Nss')
+                self.names.append('Daily Settings')
+                self.names.append('Daily Picons')
+                # self.names.append('Plugin Script')
+                self.xmlparse = minidom.parseString(self.xml)
+                for plugins in self.xmlparse.getElementsByTagName('plugins'):
+                    self.names.append(str(plugins.getAttribute('cont')))
+                self['info'].setText('Select')
+                self["list"].l.setList(self.names)
+                # showlistNss(self.names, self['list'])
+        except:
+            self['info'].setText(_('Error processing server addons data'))
+
+    def okRun(self):
+        global category
+        selection = str(self['list'].getCurrent())
+        if 'Daily Settings' in selection:
+            self.session.open(NssDailySetting)
+
+        elif 'Daily Picons' in selection:
+            self.session.open(SelectPiconz)
+
+        # elif 'Plugin Script' in selection:
+            # category = 'PlugiScript.xml'
+            # xml1 = str(xml_path) + category
+            # xm = check_gzip(xml1)
+            # print('xml:', xm)
+            # self.xmlparse = minidom.parseString(xm)
+            # self.session.open(AddonPackagesGroups, self.xmlparse, selection)
+
+        # elif 'Setting Channel Nss' in selection:
+            # category = 'Settingchannelnss.xml'
+            # xml1 = str(xml_path) + category
+            # xm = check_gzip(xml1)
+            # print('xml:', xm)
+            # self.xmlparse = minidom.parseString(xm)
+            # self.session.open(AddonPackagesGroups, self.xmlparse, selection)
+
+        else:
+            self.session.open(AddonPackagesGroups, self.xmlparse, selection)
 
     def check_dependencies(self):
         dependencies = True
         try:
             import requests
-        except:
+        except ImportError:
             dependencies = False
         if dependencies is False:
             chmod("/usr/lib/enigma2/python/Plugins/Extensions/nssaddon/dependencies.sh", 0o0755)
@@ -452,225 +468,182 @@ class HomeNss(Screen):
         else:
             self.starts()
 
-    def starts(self):
+    def starts(self, res=None):
         Utils.OnclearMem()
 
     def closerm(self):
-        ReloadBouquets()
+        ReloadBouquets(0)
         Utils.deletetmp()
         self.close()
 
     def goConfig(self):
         self.session.open(nssConfig)
 
-    def updateMenuList(self):
-        self.menu_list = []
-        for x in self.menu_list:
-            del self.menu_list[0]
-        list = []
-        idx = 0
-        for x in Panel_list:
-            list.append(nssListEntry(x, idx))
-            self.menu_list.append(x)
-            idx += 1
-        self['list'].setList(list)
-        self.timer2 = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer2_conn = self.timer2.timeout.connect(self.__layoutFinished)
-        else:
-            self.timer2.callback.append(self.__layoutFinished)
-        self.timer2.start(200, 1)
-
-    def okRun(self):
-        self.keyNumberGlobalCB(self['list'].getSelectedIndex())
-
     def ipkDs(self):
         self.session.open(NssRemove)
 
     def NSSCamsManager(self):
         tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
         if os.path.exists(tvman):
-            # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            # self.session.openWithCallback(self.close, NSSCamsManager)
             from Plugins.Extensions.Manager.plugin import Manager
-            self.session.openWithCallback(self.close, Manager)
+            self.session.openWithCallback(self.passe, Manager)
         else:
             self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
+
+    def passe(self, ret=None):
+        self.close()
 
     def NssIPK(self):
         self.session.open(NssIPK)
 
-    def keyNumberGlobalCB(self, idx):
-        global category
-        sel = self.menu_list[idx]
-        if sel == _('DAILY SETTINGS'):
-            self.session.open(NssDailySetting)
-        if sel == _('SETTING CHANNEL NSS'):
-            category = 'Settingchannelnss.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('DAILY PICONS'):
-            self.session.open(SelectPiconz)
-        if sel == _('LULULLA CORNER'):
-            category = 'lululla.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('DRIVERS'):
-            category = 'Drivers.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('DEPENDENCIES'):
-            category = 'Dependencies.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN BACKUP'):
-            category = 'PluginBackup.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN EMULATORS CAMS'):
-            category = 'PluginEmulators.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN EPG'):
-            category = 'PluginEpg.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN GAME'):
-            category = 'PluginGame.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN MULTIBOOT'):
-            category = 'PluginMultiboot.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN MULTIMEDIA'):
-            category = 'PluginMultimedia.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN PICONS'):
-            category = 'Picons.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN PPANEL'):
-            category = 'PluginPpanel.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SCRIPT'):
-            category = 'PlugiScript.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SETTINGS PANEL'):
-            category = 'PluginSettings.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SKINS'):
-            category = 'PluginSkins.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN SPORT'):
-            category = 'PluginSport.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN UTILITY'):
-            category = 'PluginUtility.xml'
-            self.session.open(nssCategories, category)
-        if sel == _('PLUGIN WEATHER'):
-            category = 'PluginWeather.xml'
-            self.session.open(nssCategories, category)
-        else:
-            return
 
+class AddonPackagesGroups(Screen):
 
-class nssCategories(Screen):
-    def __init__(self, session, category):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+    def __init__(self, session, xmlparse, selection):
+        Screen.__init__(self, session)
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (category)
-        Screen.__init__(self, session)
-        self.list = []
-        self['list'] = nssList([])
-        self.category = category
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label()
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Extensions Installer'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button(_('Uninstall'))
-        self["key_blue"] = Button(_("NSS Cam Manager"))
-        # self['key_blue'].hide()
-        self.Update = False
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self._gotPageLoad)
-        else:
-            self.timer.callback.append(self._gotPageLoad)
-        self.timer.start(500, 1)
+
+        self.xmlparse = xmlparse
+        self.selection = selection
+        self['info'] = Label(_('Welcome , Please Wait..'))
+
+        self['key_green'] = Button()
+        self['key_red'] = Button()
+        self['key_yellow'] = Button()
+        self["key_blue"] = Button()
+        self['key_green'].hide()
+        self['key_red'].hide()
+        self['key_yellow'].hide()
+        self["key_blue"].hide()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
         self['title'] = Label(name_plug)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions',
-                                     'EPGSelectActions',
-                                     'MenuActions',
-                                     'DirectionActions'], {'ok': self.okRun,
-                                                           'green': self.NssIPK,
-                                                           'menu': self.goConfig,
-                                                           'blue': self.NSSCamsManager,
-                                                           'yellow': self.ipkDs,
-                                                           'red': self.close,
-                                                           'cancel': self.close}, -2)
 
-    def _gotPageLoad(self):
-        xml = str(xml_path) + self.category
-        self.xml = check_gzip(xml)
-        try:
-            match = re.compile(regexC, re.DOTALL).findall(self.xml)
-            for name in match:
-                name = six.ensure_str(name)
-                print('name: ', name)
-                self.list.append(name)
-                self['info'].setText(_('Please select ...'))
-            showlistNss(self.list, self['list'])
-            self['key_green'].show()
-            self.downloading = True
-        except Exception as e:
-            print('error: ', str(e))
+        self.list = []
+        adlist = []
+        for plugins in self.xmlparse.getElementsByTagName('plugins'):
+            if str(plugins.getAttribute('cont')) == self.selection:
+                for plugin in plugins.getElementsByTagName('plugin'):
+                    adlist.append(str(plugin.getAttribute('name')))
+                continue
 
-    def NssIPK(self):
-        self.session.open(NssIPK)
+        adlist.sort()
 
-    def ipkDs(self):
-        self.session.open(NssRemove)
+        self['list'] = MenuList(adlist)
 
-    def NSSCamsManager(self):
-        tvman = resolveFilename(SCOPE_PLUGINS, "Extensions/{}".format('nssaddon'))
-        if os.path.exists(tvman):
-            # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-            # self.session.openWithCallback(self.close, NSSCamsManager)
-            from Plugins.Extensions.Manager.plugin import Manager
-            self.session.openWithCallback(self.close, Manager)
+        self['actions'] = ActionMap(['OkCancelActions'], {'cancel': self.close,
+                                                          'ok': self.msginstal,
+                                                          }, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
         else:
-            self.session.open(MessageBox, ("NSSCamsManager Not Installed!!\nInstall First"), type=MessageBox.TYPE_INFO, timeout=3)
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
 
-    def goConfig(self):
-        self.session.open(nssConfig)
+    def msginstal(self):
+        self.session.openWithCallback(self.selclicked, MessageBox, _('Do you install this plugin ?'), MessageBox.TYPE_YESNO)
 
-    def okRun(self):
-        if self.downloading is True:
+    def selclicked(self, result):
+        if result:
             try:
-                idx = self["list"].getSelectionIndex()
-                name = self.list[idx]
-                self.session.open(NssInstall, self.xml, name)
+                selection_country = self['list'].getCurrent()
+                for plugins in self.xmlparse.getElementsByTagName('plugins'):
+                    if str(plugins.getAttribute('cont')) == self.selection:
+                        for plugin in plugins.getElementsByTagName('plugin'):
+                            if str(plugin.getAttribute('name')) == selection_country:
+                                self.com = str(plugin.getElementsByTagName('url')[0].childNodes[0].data)
+                                self.dom = str(plugin.getAttribute('name'))
+                                # test lululla
+                                self.com = self.com.replace('"', '')
+                                if ".deb" in self.com:
+                                    if not os.path.exists('/var/lib/dpkg/info'):
+                                        self.session.open(MessageBox,
+                                                          _('Unknow Image!'),
+                                                          MessageBox.TYPE_INFO,
+                                                          timeout=5)
+                                        return
+                                    n2 = self.com.find("_", 0)
+                                    self.dom = self.com[:n2]
+
+                                if ".ipk" in self.com:
+                                    if os.path.exists('/var/lib/dpkg/info'):
+                                        self.session.open(MessageBox,
+                                                          _('Unknow Image!'),
+                                                          MessageBox.TYPE_INFO,
+                                                          timeout=5)
+                                        return
+                                    n2 = self.com.find("_", 0)
+                                    self.dom = self.com[:n2]
+                                elif ".zip" in self.com:
+                                    self.dom = self.com
+                                elif ".tar" in self.com or ".gz" in self.com or "bz2" in self.com:
+                                    self.dom = self.com
+                                print('self.prombt self.com: ', self.com)
+                                self.prombt()
+                            else:
+                                print('Return from prompt ')
+                                self['info'].setText('Select')
+                            continue
             except Exception as e:
-                print('error: ', str(e))
-        else:
-            self.close()
+                print('error prompt ', e)
+                self['info'].setText('Error')
+                return
+
+    def prombt(self):
+        self.plug = self.com.split("/")[-1]
+        self.folddest = '/tmp/' + self.plug
+
+        if ".deb" in self.plug:
+            cmd2 = "dpkg -i '/tmp/" + self.plug + "'"
+        if ".ipk" in self.plug:
+            cmd2 = "opkg install --force-reinstall --force-overwrite '/tmp/" + self.plug + "'"
+        elif ".zip" in self.plug:
+            cmd2 = "unzip -o -q '/tmp/" + self.plug + "' -d /"
+        elif ".tar" in self.plug and "gz" in self.plug:
+            cmd2 = "tar -xvf '/tmp/" + self.plug + "' -C /"
+        elif ".bz2" in self.plug and "gz" in self.plug:
+            cmd2 = "tar -xjvf '/tmp/" + self.plug + "' -C /"
+        cmd3 = "rm '/tmp/" + self.plug + "'"
+        cmd = cmd2 + " && " + cmd3
+        cmd00 = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';%s > /dev/null" % (AgentRequest, str(self.com), self.folddest, cmd)
+        title = (_("Installing %s\nPlease Wait...") % self.dom)
+        self.session.open(tvConsole, _(title), [cmd00], closeOnSuccess=False)
 
 
 class NssDailySetting(Screen):
     def __init__(self, session):
+
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('DAILY SETTINGS')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
+
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
+
         self['title'] = Label(self.setup_title)
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['pth'] = Label()
-        self['pform'] = Label()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
+
         self['info'] = Label(_('Loading data... Please wait'))
         self['key_green'] = Button(_('Select'))
         self['key_red'] = Button(_('Back'))
@@ -692,15 +665,31 @@ class NssDailySetting(Screen):
                                                        'yellow': self.Lcn,
                                                        'cancel': self.closerm}, -1)
         self.onLayoutFinish.append(self.updateMenuList)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
+        else:
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
 
     def Lcn(self):
+        sets = 0
         if self.LcnOn:
             lcn = LCN()
             lcn.read()
-            if len(lcn.lcnlist) > 0:
+            if len(lcn.lcnlist) >= 1:
                 lcn.writeBouquet()
-                lcn.ReloadBouquets()
-                self.session.open(MessageBox, _('Sorting Terrestrial channels with Lcn rules Completed'), MessageBox.TYPE_INFO, timeout=5)
+                ReloadBouquets(sets)
+                self.session.open(MessageBox, _('Sorting Terrestrial channels with Lcn rules Completed'),
+                                  MessageBox.TYPE_INFO,
+                                  timeout=5)
 
     def closerm(self):
         self.close()
@@ -717,7 +706,6 @@ class NssDailySetting(Screen):
             idx += 1
         self['list'].setList(list)
         self['key_green'].show()
-        self['info'].setText(_('Please select ...'))
 
     def okRun(self):
         self.keyNumberGlobalCB(self['list'].getSelectedIndex())
@@ -729,23 +717,15 @@ class NssDailySetting(Screen):
         elif sel == ('RESTORE DTT BOUQUET'):
             self.terrestrial_restore()
         elif sel == ('SETTINGS CIEFP'):
-            self.session.open(SettingCiefp)
-        elif sel == ('SETTINGS CYRUS'):
-            self.session.open(SettingCyrus)
-        elif sel == ('SETTINGS BI58'):
-            self.session.open(SettingBi58)
+            self.session.open(SettingCiefpz)
         elif sel == ('SETTINGS MANUTEK'):
-            self.session.open(SettingManutek)
-        elif sel == ('SETTINGS MILENKA61'):
-            self.session.open(Milenka61)
+            self.session.open(SettingManutekz)
         elif sel == ('SETTINGS MORPHEUS'):
-            self.session.open(SettingMorpheus)
-        elif sel == ('SETTINGS PREDRAG'):
-            self.session.open(SettingPredrag)
+            self.session.open(SettingMorpheusz)
         elif sel == ('SETTINGS VHANNIBAL'):
-            self.session.open(SettingVhan)
+            self.session.open(SettingVhan11)
         elif sel == ('SETTINGS VHANNIBAL 2'):
-            self.session.open(SettingVhan2)
+            self.session.open(SettingVhan22)
         elif sel == _('UPDATE SATELLITES.XML'):
             self.okSATELLITE()
         elif sel == _('UPDATE TERRESTRIAL.XML'):
@@ -756,21 +736,21 @@ class NssDailySetting(Screen):
     def terrestrial_restore(self):
         self.session.openWithCallback(self.terrestrial_restore2, MessageBox, _("This operation restore your Favorite channel Dtt\nfrom =>>THISPLUGIN/temp/TerrestrialChannelListArchive\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
 
-    def terrestrial_restore2(self, answer):
+    def terrestrial_restore2(self, answer=False):
         if answer:
             terrestrial_rest()
 
     def terrestrialsave(self):
         self.session.openWithCallback(self.terrestrialsave2, MessageBox, _("This operation save your Favorite channel Dtt\nto =>>/tmp/*_enigma2settingsbackup.tar.gz\nDo you really want to continue?"), MessageBox.TYPE_YESNO)
 
-    def terrestrialsave2(self, answer):
+    def terrestrialsave2(self, answer=False):
         if answer:
             terrestrial()
 
     def okSATELLITE(self):
         self.session.openWithCallback(self.okSATELLITE2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okSATELLITE2(self, answer):
+    def okSATELLITE2(self, answer=False):
         if answer:
             if Utils.checkInternet():
                 try:
@@ -791,7 +771,7 @@ class NssDailySetting(Screen):
     def okTERRESTRIAL(self):
         self.session.openWithCallback(self.okTERRESTRIAL2, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okTERRESTRIAL2(self, answer):
+    def okTERRESTRIAL2(self, answer=False):
         if answer:
             if Utils.checkInternet():
                 try:
@@ -810,23 +790,25 @@ class NssDailySetting(Screen):
                 self.session.open(MessageBox, "No Internet", MessageBox.TYPE_INFO)
 
 
-class SettingVhan(Screen):
+class SettingCiefpz(Screen):
+
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Vhannibal Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setup_title = ('Setting Ciefp')
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
         self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
         self['key_green'] = Button(_('Install'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button()
@@ -847,569 +829,19 @@ class SettingVhan(Screen):
                                                        'green': self.okRun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
 
-    def downxmlpage(self):
-        self.names = []
-        self.urls = []
-        try:
-            urlsat = 'https://www.vhannibal.net/asd.php'
-            data = make_req(urlsat)
-            if PY3:
-                data = six.ensure_str(data)
-            match = re.compile('<td><a href="(.+?)">(.+?)</a></td>.*?<td>(.+?)</td>', re.DOTALL).findall(data)
-            for url, name, date in match:
-                name = name.replace('&#127381;', '') + ' ' + date
-                url = "https://www.vhannibal.net/" + url
-                self.urls.append(Utils.str_encode(url.strip()))
-                self.names.append(Utils.str_encode(name.strip()))
-            self.downloading = True
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                self.name = self.names[idx]
-                url = self.urls[idx]
-                dest = "/tmp/settings.zip"
-                self.namel = ''
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if 'dtt' not in self.name.lower():
-                    sets = 1
-                    terrestrial()
-                if os.path.exists(dest):
-                    fdest1 = "/tmp/unzipped"
-                    fdest2 = "/etc/enigma2"
-                    if os.path.exists("/tmp/unzipped"):
-                        cmd = "rm -rf '/tmp/unzipped'"
-                        os.system(cmd)
-                    os.makedirs('/tmp/unzipped')
-                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
-                    os.system(cmd2)
-                    for root, dirs, files in os.walk(fdest1):
-                        for name in dirs:
-                            self.namel = name
-                    os.system('rm -rf /etc/enigma2/lamedb')
-                    os.system('rm -rf /etc/enigma2/*.radio')
-                    os.system('rm -rf /etc/enigma2/*.tv')
-                    os.system('rm -rf /etc/enigma2/*.del')
-                    os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
-                    title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &; sleep 3"], closeOnSuccess=False)
-                    self['info'].setText(_('Settings Installed ...'))
-                else:
-                    self['info'].setText(_('Settings Not Installed ...'))
-            else:
-                self['info'].setText(_('No Downloading ...'))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class SettingVhan2(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Vhannibal Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT VHANNIBAL.NET SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
         else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-
-    def downxmlpage(self):
-        url = 'http://sat.alfa-tech.net/upload/settings/vhannibal/'
-        data = make_req(url)
-        if PY3:
-            data = six.ensure_str(data)
-        self.names = []
-        self.urls = []
-        try:
-            regex = '<a href="Vhannibal(.*?).zip"'
-            match = re.compile(regex).findall(data)
-            for url in match:
-                if '.php' in url.lower():
-                    continue
-                name = "Vhannibal" + url
-                name = name.replace('&#127381;', '').replace("%20", " ")
-                url = "http://sat.alfa-tech.net/upload/settings/vhannibal/Vhannibal" + url + '.zip'
-                self.urls.append(Utils.str_encode(url.strip()))
-                self.names.append(Utils.str_encode(name.strip()))
-                self.downloading = True
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                try:
-                    idx = self["list"].getSelectionIndex()
-                    self.name = self.names[idx]
-                    url = self.urls[idx]
-                    dest = "/tmp/settings.zip"
-
-                    if 'dtt' not in url.lower():
-                        sets = 1
-                        terrestrial()
-
-                    # if PY3:
-                        # url = six.ensure_binary(url)
-                    if url.startswith(b"https") and sslverify:
-                        parsed_uri = urlparse(url)
-                        domain = parsed_uri.hostname
-                        sniFactory = SNIFactory(domain)
-                        downloadPage(url, dest, sniFactory, timeout=5).addCallback(self.download, dest).addErrback(self.downloadError)
-                    else:
-                        downloadPage(url, dest).addCallback(self.download, dest).addErrback(self.downloadError)
-                except Exception as e:
-                    print('error: ', str(e))
-
-    def download(self, data, dest):
-        try:
-            if os.path.exists(dest):
-                self.namel = ''
-                fdest1 = "/tmp/unzipped"
-                fdest2 = "/etc/enigma2"
-                if os.path.exists("/tmp/unzipped"):
-                    cmd = "rm -rf '/tmp/unzipped'"
-                    os.system(cmd)
-                os.makedirs('/tmp/unzipped')
-                cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
-                os.system(cmd2)
-                for root, dirs, files in os.walk(fdest1):
-                    for name in dirs:
-                        self.namel = name
-                os.system('rm -rf /etc/enigma2/lamedb')
-                os.system('rm -rf /etc/enigma2/*.radio')
-                os.system('rm -rf /etc/enigma2/*.tv')
-                os.system('rm -rf /etc/enigma2/*.del')
-                os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
-                title = _("Installation Settings")
-                self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &; sleep 3"], closeOnSuccess=False)
-                self['info'].setText(_('Settings Installed ...'))
-            else:
-                self['info'].setText(_('Settings Not Installed ...'))
-
-        except Exception as e:
-            print('error: ', str(e))
-            self['info'].setText(_('Not Installed ...'))
-
-    def downloadError(self, png):
-        try:
-            if not fileExists(png):
-                self.poster_resize(no_cover)
-        except Exception as e:
-            print('error: ', str(e))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class Milenka61(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Milenka61 Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-
-    def downxmlpage(self):
-        url = 'http://178.63.156.75/tarGz/'
-        data = make_req(url)
-        if PY3:
-            data = six.ensure_str(data)
-        r = data
-        self.names = []
-        self.urls = []
-        try:
-            regex = '<a href="Satvenus(.+?)".*?align="right">(.*?) </td>'
-            match = re.compile(regex).findall(r)
-            for url, txt in match:
-                if url.find('.tar.gz') != -1:
-                    name = url.replace('_EX-YU_Lista_za_milenka61_', '')
-                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
-                    name = name + ' ' + date
-                    name = name.replace("_", " ").replace(".tar.gz", "")
-                    url = "http://178.63.156.75/tarGz/Satvenus" + url
-                    self.urls.append(Utils.str_encode(url.strip()))
-                    self.names.append(Utils.str_encode(name.strip()))
-                self.downloading = True
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                url = self.urls[idx]
-                dest = "/tmp/settings.tar.gz"
-                if 'dtt' not in url.lower():
-                    sets = 1
-                    terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists('/tmp/settings.tar.gz'):
-                    os.system('rm -rf /etc/enigma2/lamedb')
-                    os.system('rm -rf /etc/enigma2/*.radio')
-                    os.system('rm -rf /etc/enigma2/*.tv')
-                    os.system('rm -rf /etc/enigma2/*.del')
-                    title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["tar -xvf /tmp/settings.tar.gz -C /; wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
-                self['info'].setText(_('Settings Installed ...'))
-            else:
-                self['info'].setText(_('Settings Not Installed ...'))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class SettingManutek(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Manutek Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT SAT.TECHNOLOGY SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-
-    def downxmlpage(self):
-        url = 'http://www.manutek.it/isetting/index.php'
-        data = make_req(url)
-        if PY3:
-            data = six.ensure_str(data)
-        r = data
-        self.names = []
-        self.urls = []
-        try:
-            regex = 'href="/isetting/.*?file=(.+?).zip">'
-            match = re.compile(regex).findall(r)
-            for url in match:
-                name = url
-                url = 'http://www.manutek.it/isetting/enigma2/' + url + '.zip'
-                name = name.replace("NemoxyzRLS_Manutek_", "").replace("_", " ").replace("%20", " ")
-                self.urls.append(Utils.str_encode(url.strip()))
-                self.names.append(Utils.str_encode(name.strip()))
-                self.downloading = True
-            self['info'].setText(_('Please select ...'))
-            self['key_green'].show()
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                url = self.urls[idx]
-                dest = "/tmp/settings.zip"
-                self.namel = ''
-                if 'dtt' not in url.lower():
-                    sets = 1
-                    terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists(dest):
-                    fdest1 = "/tmp/unzipped"
-                    fdest2 = "/etc/enigma2"
-                    if os.path.exists("/tmp/unzipped"):
-                        cmd = "rm -rf '/tmp/unzipped'"
-                        os.system(cmd)
-                    os.makedirs('/tmp/unzipped')
-                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
-                    os.system(cmd2)
-                    for root, dirs, files in os.walk(fdest1):
-                        for name in dirs:
-                            self.namel = name
-                    os.system('rm -rf /etc/enigma2/lamedb')
-                    os.system('rm -rf /etc/enigma2/*.radio')
-                    os.system('rm -rf /etc/enigma2/*.tv')
-                    os.system('rm -rf /etc/enigma2/*.del')
-                    os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
-                    title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &; sleep 3"], closeOnSuccess=False)
-                    self['info'].setText(_('Settings Installed ...'))
-            else:
-                self['info'].setText(_('Settings Not Installed ...'))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class SettingMorpheus(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Morpheus Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT MORPHEUS883.ALTERVISTA.ORG SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
-
-    def downxmlpage(self):
-        url = 'https://github.com/morpheus883/enigma2-zipped'
-        data = make_req(url)
-        if PY3:
-            data = six.ensure_str(data)
-        r = data
-        self.names = []
-        self.urls = []
-        try:
-            regex = 'name":"E2_Morph883_(.*?).zip".*?path":"(.*?)"'
-            # regex = 'title="E2_Morph883_(.*?).zip".*?href="(.*?)"'
-            match = re.compile(regex).findall(r)
-            for name, url in match:
-                if url.find('.zip') != -1:
-                    url = url.replace('blob', 'raw')
-                    url = 'https://github.com/morpheus883/enigma2-zipped/raw/master/' + url
-                    name = 'Morph883 ' + name
-                    self.urls.append(Utils.str_encode(url.strip()))
-                    self.names.append(Utils.str_encode(name.strip()))
-                    self.downloading = True
-            self['key_green'].show()
-            self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                url = self.urls[idx]
-                dest = "/tmp/settings.zip"
-                self.namel = ''
-                if 'dtt' not in url.lower():
-                    sets = 1
-                    terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists(dest):
-                    # fdest1 = "/tmp/unzipped"
-                    fdest2 = "/etc/enigma2"
-                    if os.path.exists("/tmp/unzipped"):
-                        os.system('rm -rf /tmp/unzipped')
-                    os.makedirs('/tmp/unzipped')
-                    os.system('unzip -o -q /tmp/settings.zip -d /tmp/unzipped')
-                    path = '/tmp/unzipped'
-                    # pth = ''
-                    for root, dirs, files in os.walk(path):
-                        for name in dirs:
-                            self.namel = name
-                    os.system('rm -rf /etc/enigma2/lamedb')
-                    os.system('rm -rf /etc/enigma2/*.radio')
-                    os.system('rm -rf /etc/enigma2/*.tv')
-                    os.system('rm -rf /etc/enigma2/*.del')
-                    os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
-                    title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
-                    self['info'].setText(_('Settings Installed ...'))
-            else:
-                self['info'].setText(_('Settings Not Installed ...'))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class SettingCiefp(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Ciefp Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT GITHUB.COM/CIEFP SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
-        else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
 
     def downxmlpage(self):
         url = 'https://github.com/ciefp/ciefpsettings-enigma2-zipped'
@@ -1426,6 +858,8 @@ class SettingCiefp(Screen):
             regex = 'title="ciefp-E2-(.*?).zip".*?href="(.*?)"'
             match = re.compile(regex).findall(r)
             for name, url in match:
+                if name in self.names:
+                    continue
                 if url.find('.zip') != -1:
                     url = url.replace('blob', 'raw')
                     url = 'https://github.com' + url
@@ -1433,8 +867,10 @@ class SettingCiefp(Screen):
                     self.names.append(Utils.str_encode(name.strip()))
                     self.downloading = True
             self['key_green'].show()
-            self['info'].setText(_('Please select ...'))
+
             showlistNss(self.names, self['list'])
+            # self['list'].setList(self.names)
+
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1442,7 +878,7 @@ class SettingCiefp(Screen):
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okRun1(self, answer):
+    def okRun1(self, answer=False):
         if answer:
             global sets
             sets = 0
@@ -1454,18 +890,21 @@ class SettingCiefp(Screen):
                 if 'dtt' not in url.lower():
                     sets = 1
                     terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists(dest):
+                if keepiptv():
+                    print('-----save iptv channels-----')
+
+                from six.moves.urllib.request import urlretrieve
+                urlretrieve(url, dest)
+
+                if os.path.exists(dest) and '.zip' in dest:
+                    fdest1 = "/tmp/unzipped"
                     fdest2 = "/etc/enigma2"
                     if os.path.exists("/tmp/unzipped"):
                         os.system('rm -rf /tmp/unzipped')
                     os.makedirs('/tmp/unzipped')
-                    os.system('unzip -o -q /tmp/settings.zip -d /tmp/unzipped')
-                    path = '/tmp/unzipped'
-                    for root, dirs, files in os.walk(path):
+                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
+                    os.system(cmd2)
+                    for root, dirs, files in os.walk(fdest1):
                         for name in dirs:
                             self.namel = name
                     os.system('rm -rf /etc/enigma2/lamedb')
@@ -1476,30 +915,35 @@ class SettingCiefp(Screen):
                     title = _("Installation Settings")
                     self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
                     self['info'].setText(_('Settings Installed ...'))
+                else:
+                    self['info'].setText(_('Settings Not Installed (dest)...'))
             else:
                 self['info'].setText(_('Settings Not Installed ...'))
 
-    def yes(self):
-        ReloadBouquets()
+    def yes(self, call=None):
+        copy_files_to_enigma2()
+        ReloadBouquets(sets)
 
 
-class SettingBi58(Screen):
+class SettingManutekz(Screen):
+
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Bi58 Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setup_title = ('Manutek Setting')
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
         self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
         self['key_green'] = Button(_('Install'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button()
@@ -1520,9 +964,22 @@ class SettingBi58(Screen):
                                                        'green': self.okRun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
+        else:
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
 
     def downxmlpage(self):
-        url = 'http://178.63.156.75/paneladdons/Bi58/'
+        url = 'http://www.manutek.it/isetting/index.php'
         data = make_req(url)
         if PY3:
             data = six.ensure_str(data)
@@ -1530,21 +987,21 @@ class SettingBi58(Screen):
         self.names = []
         self.urls = []
         try:
-            regex = '<a href="bi58-e2(.*?)".*?align="right">(.*?) </td>'
+            regex = 'href="/isetting/.*?file=(.+?).zip">'
             match = re.compile(regex).findall(r)
-            for url, txt in match:
-                if url.find('.tar.gz') != -1:
-                    name = url.replace('-settings-', 'bi58 ')
-                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
-                    name = name + ' ' + date
-                    name = name.replace(".tar.gz", "").replace("%20", " ")
-                    url = "http://178.63.156.75/paneladdons/Bi58/bi58-e2" + url
-                    self.urls.append(Utils.str_encode(url.strip()))
-                    self.names.append(Utils.str_encode(name.strip()))
-                    self.downloading = True
+            for url in match:
+                name = url.replace("NemoxyzRLS_Manutek_", "").replace("_", " ").replace("%20", " ")
+                if name in self.names:
+                    continue
+                url = 'http://www.manutek.it/isetting/enigma2/' + url + '.zip'
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
+                self.downloading = True
             self['key_green'].show()
-            self['info'].setText(_('Please select ...'))
+
             showlistNss(self.names, self['list'])
+            # self['list'].setList(self.names)
+
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1552,53 +1009,72 @@ class SettingBi58(Screen):
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okRun1(self, answer):
+    def okRun1(self, answer=False):
         if answer:
             global sets
             sets = 0
             if self.downloading is True:
                 idx = self["list"].getSelectionIndex()
+                self.name = self.names[idx]
                 url = self.urls[idx]
-                dest = "/tmp/settings.tar.gz"
+                dest = "/tmp/settings.zip"
+                self.namel = ''
+
                 if 'dtt' not in url.lower():
                     sets = 1
                     terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists('/tmp/settings.tar.gz'):
+                if keepiptv():
+                    print('-----save iptv channels-----')
+
+                from six.moves.urllib.request import urlretrieve
+                urlretrieve(url, dest)
+                if os.path.exists(dest) and '.zip' in dest:
+                    fdest1 = "/tmp/unzipped"
+                    fdest2 = "/etc/enigma2"
+                    if os.path.exists("/tmp/unzipped"):
+                        os.system('rm -rf /tmp/unzipped')
+                    os.makedirs('/tmp/unzipped')
+                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
+                    os.system(cmd2)
+                    for root, dirs, files in os.walk(fdest1):
+                        for name in dirs:
+                            self.namel = name
                     os.system('rm -rf /etc/enigma2/lamedb')
                     os.system('rm -rf /etc/enigma2/*.radio')
                     os.system('rm -rf /etc/enigma2/*.tv')
                     os.system('rm -rf /etc/enigma2/*.del')
+                    os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
                     title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["tar -xvf /tmp/settings.tar.gz -C /; wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
+                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
                     self['info'].setText(_('Settings Installed ...'))
+                else:
+                    self['info'].setText(_('Settings Not Installed (dest)...'))
             else:
                 self['info'].setText(_('Settings Not Installed ...'))
 
-    def yes(self):
-        ReloadBouquets()
+    def yes(self, call=None):
+        copy_files_to_enigma2()
+        ReloadBouquets(sets)
 
 
-class SettingPredrag(Screen):
+class SettingMorpheusz(Screen):
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = ('Predrag Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setup_title = ('Setting Morpheus')
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
         self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT LINUXSAT-SUPPORT SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
         self['key_green'] = Button(_('Install'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button()
@@ -1619,109 +1095,22 @@ class SettingPredrag(Screen):
                                                        'green': self.okRun,
                                                        'red': self.close,
                                                        'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
 
-    def downxmlpage(self):
-        url = 'http://178.63.156.75/paneladdons/Predr@g/'
-        data = make_req(url)
-        if PY3:
-            data = six.ensure_str(data)
-        r = data
-        self.names = []
-        self.urls = []
-        try:
-            regex = '<a href="predrag(.*?)".*?align="right">(.*?) </td>'
-            match = re.compile(regex).findall(r)
-            for url, txt in match:
-                if url.find('.tar.gz') != -1:
-                    name = url.replace('-settings-e2-', 'Predrag ')
-                    date = re.search("(.+?)-(.+?)-(.+?) ", txt).group()
-                    name = name + ' ' + date
-                    name = name.replace(".tar.gz", "").replace("%20", " ")
-                    url = "http://178.63.156.75/paneladdons/Predr@g/predrag" + url
-                    self.urls.append(Utils.str_encode(url.strip()))
-                    self.names.append(Utils.str_encode(name.strip()))
-                    self.downloading = True
-            self['key_green'].show()
-            self['info'].setText(_('Please select ...'))
-            showlistNss(self.names, self['list'])
-        except Exception as e:
-            print('downxmlpage get failed: ', str(e))
-            self['info'].setText(_('Download page get failed ...'))
-
-    def okRun(self):
-        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
-
-    def okRun1(self, answer):
-        if answer:
-            global sets
-            sets = 0
-            if self.downloading is True:
-                idx = self["list"].getSelectionIndex()
-                url = self.urls[idx]
-                dest = "/tmp/settings.tar.gz"
-                if 'dtt' not in url.lower():
-                    sets = 1
-                    terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists('/tmp/settings.tar.gz'):
-                    os.system('rm -rf /etc/enigma2/lamedb')
-                    os.system('rm -rf /etc/enigma2/*.radio')
-                    os.system('rm -rf /etc/enigma2/*.tv')
-                    os.system('rm -rf /etc/enigma2/*.del')
-                    title = _("Installation Settings")
-                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["tar -xvf /tmp/settings.tar.gz -C /; wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
-                    self['info'].setText(_('Settings Installed ...'))
-            else:
-                self['info'].setText(_('Settings Not Installed ...'))
-
-    def yes(self):
-        ReloadBouquets()
-
-
-class SettingCyrus(Screen):
-    def __init__(self, session):
-        self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setup_title = ('Cyrus Setting')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        self.list = []
-        self['list'] = nssList([])
-        self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pform'] = Label('PLEASE VISIT CYRUSSETTINGS.COM SITE')
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
-        self['key_green'] = Button(_('Install'))
-        self['key_red'] = Button(_('Back'))
-        self['key_yellow'] = Button()
-        self["key_blue"] = Button()
-        self['key_yellow'].hide()
-        self['key_blue'].hide()
-        self['key_green'].hide()
-        self.downloading = False
-        self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
-
-            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
         else:
-            self.timer.callback.append(self.downxmlpage)
-        self.timer.start(500, 1)
-        self['title'] = Label(self.setup_title)
-        self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.okRun,
-                                                       'green': self.okRun,
-                                                       'red': self.close,
-                                                       'cancel': self.close}, -2)
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
 
     def downxmlpage(self):
-        url = 'http://www.cyrussettings.com/Set_29_11_2011/Dreambox-IpBox/Config.xml'
+        url = 'https://github.com/morpheus883/enigma2-zipped'
         data = make_req(url)
         if PY3:
             data = six.ensure_str(data)
@@ -1729,24 +1118,28 @@ class SettingCyrus(Screen):
         self.names = []
         self.urls = []
         try:
-            n1 = r.find('name="Sat">', 0)
-            n2 = r.find("/ruleset>", n1)
-            r = r[n1:n2]
-            regex = 'Name="(.*?)".*?Link="(.*?)".*?Date="(.*?)"><'
+            # regex = 'name":"E2_Morph883_(.*?).zip".*?path":"(.*?)"'
+            regex = 'title="E2_Morph883_(.*?).zip".*?href="(.*?)"'
+            # n1 = r.find('title="README.txt', 0)
+            # n2 = r.find('href="#readme">', n1)
+            # r = r[n1:n2]
             match = re.compile(regex).findall(r)
-            for name, url, date in match:
+            print('match:', match)
+            for name, url in match:
                 if url.find('.zip') != -1:
-                    if 'ddt' in name.lower():
+                    name = 'Morph883 ' + name
+                    if name in self.names:
                         continue
-                    if 'Sat' in name.lower():
-                        continue
-                    name = name + ' ' + date
-                    self.urls.append(Utils.str_encode(url.strip()))
-                    self.names.append(Utils.str_encode(name.strip()))
-                    self.downloading = True
+                    url = url.replace('blob', 'raw')
+                    url = 'https://github.com' + url
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
+                self.downloading = True
             self['key_green'].show()
-            self['info'].setText(_('Please select ...'))
+
             showlistNss(self.names, self['list'])
+            # self['list'].setList(self.names)
+
         except Exception as e:
             print('downxmlpage get failed: ', str(e))
             self['info'].setText(_('Download page get failed ...'))
@@ -1754,7 +1147,7 @@ class SettingCyrus(Screen):
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def okRun1(self, answer):
+    def okRun1(self, answer=False):
         if answer:
             global sets
             sets = 0
@@ -1763,21 +1156,25 @@ class SettingCyrus(Screen):
                 url = self.urls[idx]
                 dest = "/tmp/settings.zip"
                 self.namel = ''
+
                 if 'dtt' not in url.lower():
                     sets = 1
                     terrestrial()
-                import requests
-                r = requests.get(url)
-                with open(dest, 'wb') as f:
-                    f.write(r.content)
-                if os.path.exists(dest):
+                if keepiptv():
+                    print('-----save iptv channels-----')
+
+                from six.moves.urllib.request import urlretrieve
+                urlretrieve(url, dest)
+
+                if os.path.exists(dest) and '.zip' in dest:
+                    fdest1 = "/tmp/unzipped"
                     fdest2 = "/etc/enigma2"
                     if os.path.exists("/tmp/unzipped"):
                         os.system('rm -rf /tmp/unzipped')
                     os.makedirs('/tmp/unzipped')
-                    os.system('unzip -o -q /tmp/settings.zip -d /tmp/unzipped')
-                    path = '/tmp/unzipped'
-                    for root, dirs, files in os.walk(path):
+                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
+                    os.system(cmd2)
+                    for root, dirs, files in os.walk(fdest1):
                         for name in dirs:
                             self.namel = name
                     os.system('rm -rf /etc/enigma2/lamedb')
@@ -1788,37 +1185,318 @@ class SettingCyrus(Screen):
                     title = _("Installation Settings")
                     self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
                     self['info'].setText(_('Settings Installed ...'))
+                else:
+                    self['info'].setText(_('Settings Not Installed (dest)...'))
             else:
                 self['info'].setText(_('Settings Not Installed ...'))
 
-    def yes(self):
-        ReloadBouquets()
+    def yes(self, call=None):
+        copy_files_to_enigma2()
+        ReloadBouquets(sets)
+
+
+class SettingVhan11(Screen):
+
+    def __init__(self, session):
+        Screen.__init__(self, session)
+        self.session = session
+        skin = os.path.join(skin_path, 'HomeNss.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Setting Vhannibal')
+        self.setTitle(name_plug)
+        self.list = []
+
+        self['list'] = nssList([])
+        # self['list'] = MenuList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button()
+        self["key_blue"] = Button()
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.downloading = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+        else:
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(self.setup_title)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
+        else:
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
+
+    def downxmlpage(self):
+        self.names = []
+        self.urls = []
+        try:
+            urlsat = 'https://www.vhannibal.net/asd.php'
+            data = make_req(urlsat)
+            if PY3:
+                data = six.ensure_str(data)
+            match = re.compile('<td><a href="(.+?)">(.+?)</a></td>.*?<td>(.+?)</td>', re.DOTALL).findall(data)
+            for url, name, date in match:
+                name = str(name) + ' ' + date
+                if name in self.names:
+                    continue
+                url = "https://www.vhannibal.net/" + url
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
+            self.downloading = True
+            # self['info'].setText(_('Please select ...'))
+            self['key_green'].show()
+            showlistNss(self.names, self['list'])
+        except Exception as e:
+            print('downxmlpage get failed: ', str(e))
+            self['info'].setText(_('Download page get failed ...'))
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer=False):
+        if answer:
+            global sets
+            sets = 0
+            if self.downloading is True:
+                idx = self["list"].getSelectionIndex()
+                self.name = self.names[idx]
+                url = self.urls[idx]
+                dest = "/tmp/settings.zip"
+                self.namel = ''
+
+                if 'dtt' not in url.lower():
+                    sets = 1
+                    terrestrial()
+                if keepiptv():
+                    print('-----save iptv channels-----')
+
+                from six.moves.urllib.request import urlretrieve
+                urlretrieve(url, dest)
+
+                if os.path.exists(dest) and '.zip' in dest:
+                    fdest1 = "/tmp/unzipped"
+                    fdest2 = "/etc/enigma2"
+                    if os.path.exists("/tmp/unzipped"):
+                        os.system('rm -rf /tmp/unzipped')
+                    os.makedirs('/tmp/unzipped')
+                    cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
+                    os.system(cmd2)
+                    for root, dirs, files in os.walk(fdest1):
+                        for name in dirs:
+                            self.namel = name
+                    os.system('rm -rf /etc/enigma2/lamedb')
+                    os.system('rm -rf /etc/enigma2/*.radio')
+                    os.system('rm -rf /etc/enigma2/*.tv')
+                    os.system('rm -rf /etc/enigma2/*.del')
+                    os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
+                    title = _("Installation Settings")
+                    self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
+                    self['info'].setText(_('Settings Installed ...'))
+                else:
+                    self['info'].setText(_('Settings Not Installed (dest)...'))
+            else:
+                self['info'].setText(_('Settings Not Installed ...'))
+
+    def yes(self, call=None):
+        copy_files_to_enigma2()
+        ReloadBouquets(sets)
+
+
+class SettingVhan22(Screen):
+
+    def __init__(self, session):
+        Screen.__init__(self, session)
+        self.session = session
+        skin = os.path.join(skin_path, 'HomeNss.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setup_title = ('Setting Vhannibal')
+        self.setTitle(name_plug)
+        self.list = []
+        self['list'] = nssList([])
+        # self['list'] = MenuList([])
+        self['info'] = Label(_('Loading data... Please wait'))
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
+        self['key_green'] = Button(_('Install'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button()
+        self["key_blue"] = Button()
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['key_green'].hide()
+        self.downloading = False
+        self.timer = eTimer()
+        if os.path.exists('/var/lib/dpkg/info'):
+            self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
+        else:
+            self.timer.callback.append(self.downxmlpage)
+        self.timer.start(500, 1)
+        self['title'] = Label(self.setup_title)
+        self['actions'] = ActionMap(['OkCancelActions',
+                                     'ColorActions'], {'ok': self.okRun,
+                                                       'green': self.okRun,
+                                                       'red': self.close,
+                                                       'cancel': self.close}, -2)
+        self.onLayoutFinish.append(self.__layoutFinished)
+
+    def __layoutFinished(self):
+        if status_site():
+            self['statusgreen'].show()
+            self['statusred'].hide()
+            self['status'].setText('SERVER ON')
+        else:
+            self['statusgreen'].hide()
+            self['statusred'].show()
+            self['status'].setText('SERVER OFF')
+        self.setTitle(name_plug)
+        self['info'].setText(_('Please select ...'))
+
+    def downxmlpage(self):
+        url = 'http://sat.alfa-tech.net/upload/settings/vhannibal/'
+        data = make_req(url)
+        if PY3:
+            data = six.ensure_str(data)
+        self.names = []
+        self.urls = []
+        try:
+            regex = '<a href="Vhannibal(.*?).zip"'
+            match = re.compile(regex).findall(data)
+            for url in match:
+                if '.php' in url.lower():
+                    continue
+                name = "Vhannibal" + url.replace('&#127381;', '').replace("%20", " ")
+                if name in self.names:
+                    continue
+                url = "http://sat.alfa-tech.net/upload/settings/vhannibal/Vhannibal" + url + '.zip'
+                self.urls.append(Utils.str_encode(url.strip()))
+                self.names.append(Utils.str_encode(name.strip()))
+                self.downloading = True
+            self['key_green'].show()
+            showlistNss(self.names, self['list'])
+
+        except Exception as e:
+            print('downxmlpage get failed: ', str(e))
+            self['info'].setText(_('Download page get failed ...'))
+
+    def okRun(self):
+        self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+
+    def okRun1(self, answer=False):
+        if answer:
+            global sets
+            sets = 0
+            if self.downloading is True:
+                try:
+                    idx = self["list"].getSelectionIndex()
+                    self.name = self.names[idx]
+                    url = self.urls[idx]
+                    dest = "/tmp/settings.zip"
+                    if 'dtt' not in url.lower():
+                        sets = 1
+                        terrestrial()
+                    if keepiptv():
+                        print('-----save iptv channels-----')
+                    # from six.moves.urllib.request import urlretrieve
+                    # urlretrieve(url, dest)
+                    # if PY3:
+                        # url = six.ensure_binary(url)
+                    if url.startswith(b"https") and sslverify:
+                        parsed_uri = urlparse(url)
+                        domain = parsed_uri.hostname
+                        sniFactory = SNIFactory(domain)
+                        downloadPage(url, dest, sniFactory, timeout=5).addCallback(self.download, dest).addErrback(self.downloadError)
+                    else:
+                        downloadPage(url, dest).addCallback(self.download, dest).addErrback(self.downloadError)
+                except Exception as e:
+                    print('error: ', str(e))
+
+    def download(self, data, dest):
+        try:
+            if os.path.exists(dest) and '.zip' in dest:
+                self.namel = ''
+                fdest1 = "/tmp/unzipped"
+                fdest2 = "/etc/enigma2"
+                if os.path.exists("/tmp/unzipped"):
+                    os.system('rm -rf /tmp/unzipped')
+                os.makedirs('/tmp/unzipped')
+                cmd2 = "unzip -o -q '/tmp/settings.zip' -d " + fdest1
+                os.system(cmd2)
+                for root, dirs, files in os.walk(fdest1):
+                    for name in dirs:
+                        self.namel = name
+                os.system('rm -rf /etc/enigma2/lamedb')
+                os.system('rm -rf /etc/enigma2/*.radio')
+                os.system('rm -rf /etc/enigma2/*.tv')
+                os.system('rm -rf /etc/enigma2/*.del')
+                os.system("cp -rf  '/tmp/unzipped/" + str(self.namel) + "/'* " + fdest2)
+                title = _("Installation Settings")
+                self.session.openWithCallback(self.yes, tvConsole, title=_(title), cmdlist=["wget -qO - http://127.0.0.1/web/servicelistreload?mode=0 > /tmp/inst.txt 2>&1 &"], closeOnSuccess=False)
+                self['info'].setText(_('Settings Installed ...'))
+            else:
+                self['info'].setText(_('Settings Not Installed ...'))
+        except Exception as e:
+            print('error: ', str(e))
+            self['info'].setText(_('Not Installed ...'))
+
+    def downloadError(self, png):
+        try:
+            if not fileExists(png):
+                self.poster_resize(no_cover)
+        except Exception as e:
+            print('error: ', str(e))
+
+    def yes(self, call=None):
+        copy_files_to_enigma2()
+        ReloadBouquets(sets)
 
 
 class NssInstall(Screen):
     def __init__(self, session, data, name, selection=None):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('NSS CONSOLE')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self.selection = selection
-        self['info'] = Label()
+        self['info'] = Label(_('... please wait'))
         self['pth'] = Label()
         self['pform'] = Label()
-
         self['progress'] = ProgressBar()
         self["progress"].hide()
         self['progresstext'] = StaticText()
-
         self['progress'].setRange((0, 100))
         self['progress'].setValue(0)
-
         list = []
         list.sort()
-        self['info'].setText(_('... please wait'))
         n1 = data.find(name, 0)
         n2 = data.find("</plugins>", n1)
         data1 = data[n1:n2]
@@ -1836,7 +1514,7 @@ class NssInstall(Screen):
             self.names.append(name)
             self.urls.append(url)
         self['list'] = nssList([])
-        self['info'].setText(_('Please install ...'))
+        # self['list'] = MenuList([])
         self['title'] = Label(self.setup_title)
         self['key_red'] = Button(_('Back'))
         self['key_green'] = Button(_('Install'))
@@ -1845,8 +1523,8 @@ class NssInstall(Screen):
         self['key_blue'].hide()
         self['key_green'].hide()
         self['actions'] = ActionMap(['OkCancelActions',
-                                     'ColorActions'], {'ok': self.message,
-                                                       'green': self.message,
+                                     'ColorActions'], {'ok': self.message1,
+                                                       'green': self.message1,
                                                        'red': self.exitY,
                                                        'yellow': self.okDown,
                                                        'cancel': self.exitY}, -2)
@@ -1858,13 +1536,13 @@ class NssInstall(Screen):
 
     def start(self):
         showlistNss(self.names, self['list'])
+        self['info'].setText(_('Please install ...'))
         self['key_green'].show()
 
-    def message(self):
-                          
-        self.session.openWithCallback(self.message1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
+    def message1(self):
+        self.session.openWithCallback(self.message, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def message1(self, answer=False):
+    def message(self, answer=False):
         if answer:
             idx = self["list"].getSelectionIndex()
             dom = self.names[idx]
@@ -1905,25 +1583,20 @@ class NssInstall(Screen):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Installation canceled!'))
                 else:
-                    cmd22 = 'find /usr/bin -name "wget"'
-                    res = os.popen(cmd22).read()
-                    if 'wget' not in res.lower():
-                        cmd23 = 'apt-get update && apt-get install wget'
-                        os.popen(cmd23)
-                    # cmd = 'dpkg -i %s' % down
-                    cmd = 'apt-get -f -y --force-yes install %s' % down
-                    # cmd = 'dpkg --install --force-overwrite %s' % self.dest
-                    # cmd = "wget -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
-                    # if "https" in str(self.com):
-                        # cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';apt-get install -f -y %s" % (RequestAgent(), str(self.com), self.dest, self.dest)
+                    cmd = "wget -U '%s' -c '%s' -O '%s';dpkg -i %s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.dest)
+                    if "https" in str(self.com):
+                        cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';dpkg -i %s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
+
             elif extension == "ipk":
                 if os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Installation canceled!'))
                 else:
-                    cmd = "opkg install --force-reinstall %s > /dev/null" % down
+                    cmd = "wget -U '%s' -c '%s' -O '%s';opkg --force-reinstall --force-overwrite install %s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.dest)
+                    if "https" in str(self.com):
+                        cmd = "wget --no-check-certificate -U '%s' -c '%s' -O '%s';opkg --force-reinstall --force-overwrite install %s > /dev/null" % (AgentRequest, str(self.com), self.dest, self.dest)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
             elif self.com.endswith('.zip'):
@@ -1972,12 +1645,10 @@ class NssInstall(Screen):
                     self.session.open(tvConsole, _('Downloading: %s') % self.dom, cmd, closeOnSuccess=False)
                     self['info'].setText(_('Download done !!!'))
                     self.session.open(MessageBox, _('Download file in /tmp successful!'), MessageBox.TYPE_INFO, timeout=5)
-                    # self.timer.start(1000, True)
                     self['info'].setText(_('Download file in /tmp successful!!'))
             else:
-                self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
+                self['info'].setText(_('Download Failed!') + self.dom + _('... Not supported'))
             self.timer.start(3000, 1)
-            # self.addondel()
 
     def dowfil(self):
         self.dest = '/tmp/' + self.downplug
@@ -2008,17 +1679,18 @@ class NssInstall(Screen):
     def okDown(self):
         self.session.openWithCallback(self.okDownll, MessageBox, _("Do you want to Download?\nIt could take a few minutes, wait .."), MessageBox.TYPE_YESNO)
 
-    def okDownll(self, answer):
+    def okDownll(self, answer=False):
         if answer:
             self['info'].setText(_('... please wait'))
             idx = self["list"].getSelectionIndex()
             self.dom = self.names[idx]
             self.com = self.urls[idx]
-            print('1 self.com type=', type(self.com))
             self.downplug = self.com.split("/")[-1]
             self.dest = '/tmp/' + str(self.downplug)
+
             if os.path.exists(self.dest):
                 os.remove(self.dest)
+
             if self.com is not None:
                 extensionlist = self.com.split('.')
                 extension = extensionlist[-1].lower()
@@ -2032,23 +1704,35 @@ class NssInstall(Screen):
                         self.command = ["tar -xjvf " + self.dest + " -C /"]
                     self.timer = eTimer()
                     self.timer.start(1000, True)
-                    cmd = 'wget --no-cache --no-dns-cache -q -O %s %s --post-data="action=purge";' + self.command[0] % (self.dest, str(self.com))
+                    cmd = "wget --no-cache --no-dns-cache -q -O '%s' '%s' --post-data='action=purge';" + self.command[0] % (self.dest, str(self.com))
+                    print('command:', cmd)
                     self.session.open(tvConsole, _('Downloading-installing: %s') % self.dom, [cmd], closeOnSuccess=False)
                     self['info'].setText(_('Installation done !!!'))
                     return
+
                 if extension == "deb" and not os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
+
                 elif extension == ".ipk" and os.path.exists('/var/lib/dpkg/info'):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
-                self.download = downloadWithProgress(self.com, self.dest)
-                self.download.addProgress(self.downloadProgress)
-                self.download.start().addCallback(self.install).addErrback(self.download_failed)
+                else:
+                    if os.path.exists('/var/lib/dpkg/info'):
+                        cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s' --post-data='action=purge' > /dev/null" % (RequestAgent(), str(self.com), self.dest)]
+                        print('command:', cmd)
+                        subprocess.Popen(cmd[0], shell=True, executable='/bin/bash')
+                        self.session.openWithCallback(self.tvIPK, MessageBox, _('Download file in /tmp successful!'), MessageBox.TYPE_INFO, timeout=5)
+                        return
+                    # else:
+                    self.download = downloadWithProgress(self.com, self.dest)
+                    self.download.addProgress(self.downloadProgress)
+                    self.download.start().addCallback(self.install).addErrback(self.download_failed)
+
             else:
-                self['info'].setText(_('Download Failed!!!') + self.dom + _('... Not supported'))
+                self['info'].setText(_('Download Failed!') + self.dom + _('... Not supported'))
 
     def downloadProgress(self, recvbytes, totalbytes):
         self['info'].setText(_('Download in progress...'))
@@ -2057,12 +1741,31 @@ class NssInstall(Screen):
         self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
         self.last_recvbytes = recvbytes
 
+    # ok oe2
+    def downloadProgress2(self, recvbytes, totalbytes):
+        try:
+            self['info'].setText(_('Download in progress...'))
+            self["progress"].show()
+            self['progress'].value = int(100 * self.last_recvbytes / float(totalbytes))
+            self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes / 1024, totalbytes / 1024, 100 * self.last_recvbytes / float(totalbytes))
+            self.last_recvbytes = recvbytes
+        except ZeroDivisionError:
+            self['info'].setText(_('Download Failed!'))
+            self["progress"].hide()
+            self['progress'].setRange((0, 100))
+            self['progress'].setValue(0)
+
+    def showError(self):
+        print("download error ")
+        self.downloading = False
+        self.close()
+
     def download_failed(self, failure_instance=None, error_message=""):
         self.error_message = error_message
         if error_message == "" and failure_instance is not None:
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
-        info = 'Download Failed!!!' + str(self.error_message)
+        info = _('Download Failed!') + str(self.error_message)
         self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
         return
@@ -2088,7 +1791,7 @@ class NssInstall(Screen):
             self.close()
         return
 
-    def abort(self):
+    def abort(self, ret=None):
         print("aborting", self.url)
         if self.download:
             self.download.stop()
@@ -2098,8 +1801,8 @@ class NssInstall(Screen):
         if self.aborted:
             self.finish(aborted=True)
 
-    def NssIPK(self, string=''):
-        self.session.openWithCallback(self.close, NssIPK)
+    def NssIPK(self, string=None):
+        self.install('None')
 
     def install(self, string=''):
         if self.aborted:
@@ -2113,19 +1816,22 @@ class NssInstall(Screen):
                 self['progress'].setValue(self.progclear)
                 self["progress"].hide()
                 self['info'].setText(_('File Downloaded ...'))
-                self.NssIPK()
+                self.session.openWithCallback(self.passe, NssIPK)
+
+    def passe(self, ret=None):
+        self.close()
 
 
 class NssIPK(Screen):
     def __init__(self, session, title=None, cmdlist=None, finishedCallback=None, closeOnSuccess=False):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'NssIPK.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (name_plug)
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
-        # self.ipkpth = str(config.plugins.nssaddon.ipkpth.value)
+        self.setTitle(name_plug)
+        self.setup_title = ('Extensions Install')
+
         self.ipkpth = '/tmp'
         self.list = []
         self.names = []
@@ -2138,7 +1844,8 @@ class NssIPK(Screen):
         self['title'] = Label(self.setup_title)
         self['info'] = Label('...')
         self['list'] = nssList([])
-        self['info1'] = Label(_('Path /tmp\nPut .ipk .tar.gz .deb .zip and install'))
+
+        self['info1'] = Label(_('Path /tmp\n\nPut .ipk .tar.gz .deb .zip and install'))
         self['actions'] = ActionMap(['OkCancelActions',
                                      'WizardActions',
                                      'ColorActions',
@@ -2179,23 +1886,32 @@ class NssIPK(Screen):
         showlistNss(self.names, self['list'])
         self.getfreespace()
 
-    def msgipkrmv(self, answer=None):
+    def msgipkrmv(self, answer=False):
         if len(self.names) >= 0:
             idx = self['list'].getSelectionIndex()
             self.sel = self.names[idx]
-            if answer is None:
+            self.com = self.ipkpth + '/' + self.sel
+            if answer is False:
                 self.session.openWithCallback(self.msgipkrmv, MessageBox, (_('Do you really want to remove selected?\n') + self.sel), MessageBox.TYPE_YESNO)
             else:
                 self['info'].setText(_('... please wait'))
                 self.com = self.ipkpth + '/' + self.sel
                 if fileExists(self.com):
                     os.remove(self.com)
+                    # i = len(self.list)
+                    # del self.list[0:i]
+                    self.list = []
+                    self.names = []
+                    for x in self.list:
+                        del self.list[0]
+                    for x in self.names:
+                        del self.names[0]
+                    del self.names[:]
+                    del self.list[:]
                     self.session.open(MessageBox, (_("%s has been successfully deleted\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
-                    i = len(self.list)
-                    del self.list[0:i]
                 else:
                     self.session.open(MessageBox, (_("%s not exist!\nwait time to refresh the list...") % self.sel), MessageBox.TYPE_INFO, timeout=5)
-            self.refreshlist()
+                self.close()
 
     def getfreespace(self):
         try:
@@ -2207,18 +1923,18 @@ class NssIPK(Screen):
     def goConfig(self):
         self.session.open(nssConfig)
 
-    def ipkinst(self, answer=None):
+    def ipkinst(self, answer=False):
         if len(self.names) >= 0:
             idx = self['list'].getSelectionIndex()
             self.sel = self.names[idx]
-            if answer is None:
+            if answer is False:
                 self.session.openWithCallback(self.ipkinst, MessageBox, (_('Do you really want to install the selected Addon?\n') + self.sel), MessageBox.TYPE_YESNO)
             else:
                 self['info'].setText(_('... please wait'))
                 self.dest = self.ipkpth + '/' + self.sel
                 try:
                     if self.sel.endswith('.ipk'):
-                        cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";opkg install --force-reinstall ' + self.dest + ' > /dev/null'
+                        cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";opkg --force-reinstall --force-overwrite install ' + self.dest + ' > /dev/null'
                         self.session.open(tvConsole, title='IPK Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
                     elif self.sel.endswith('.tar.gz'):
                         cmd0 = 'tar -xvf ' + self.dest + ' -C /'
@@ -2286,12 +2002,8 @@ class NssIPK(Screen):
             os.system('rm -rf ' + dest)
         self.refreshlist()
 
-    def finished(self, result):
-        self['info'].setText(_('Please select ...'))
-        return
-
-    def msgipkinst(self, answer=None):
-        if answer is None:
+    def msgipkinst(self, answer=False):
+        if answer is False:
             self.session.openWithCallback(self.msgipkinst, MessageBox, _('Restart Enigma to load the installed plugin?'), MessageBox.TYPE_YESNO)
         else:
             self.session.open(TryQuitMainloop, 3)
@@ -2299,13 +2011,13 @@ class NssIPK(Screen):
 
 class NssRemove(Screen):
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        self.setup_title = (name_plug)
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
+        self.setup_title = ('Extensions Remove')
         self.list = []
         self.names = []
         self.container = eConsoleAppContainer()
@@ -2313,7 +2025,6 @@ class NssRemove(Screen):
             self.container.appClosed.append(self.runFinished)
         except:
             self.appClosed_conn = self.container.appClosed.connect(self.runFinished)
-
         self['list'] = nssList([])
         self['key_green'] = Button(_('Uninstall'))
         self['key_yellow'] = Button(_('Restart'))
@@ -2369,8 +2080,6 @@ class NssRemove(Screen):
         o = len(self.names)
         del self.names[0:o]
         self.list = self.names
-        # oh my head
-
         self["list"].l.setList(self.list)
         path = ('/var/lib/opkg/info')
         if os.path.exists('/var/lib/dpkg/info'):
@@ -2394,7 +2103,7 @@ class NssRemove(Screen):
                         if name.startswith('enigma2-plugin-'):
                             self.names.append(str(name))
                 self.names.sort(key=lambda x: x, reverse=False)
-            if len(self.names) > -1:
+            if len(self.names) >= 1:
                 self['info'].setText(_('Please Remove ...'))
                 self['key_green'].show()
             showlistNss(self.names, self['list'])
@@ -2404,7 +2113,7 @@ class NssRemove(Screen):
     def message1(self):
         self.session.openWithCallback(self.message11, MessageBox, _('Do you want to remove?'), MessageBox.TYPE_YESNO)
 
-    def message11(self, answer):
+    def message11(self, answer=False):
         if answer:
             idx = self['list'].getSelectionIndex()
             dom = self.names[idx]
@@ -2431,8 +2140,8 @@ class NssRemove(Screen):
         except Exception as e:
             print(e)
 
-    def msgipkrst(self, answer=None):
-        if answer is None:
+    def msgipkrst(self, answer=False):
+        if answer is False:
             self.session.openWithCallback(self.msgipkrst, MessageBox, _('Do you want restart enigma2 ?'), MessageBox.TYPE_YESNO)
         else:
             epgpath = '/media/hdd/epg.dat'
@@ -2444,117 +2153,37 @@ class NssRemove(Screen):
             self.session.open(TryQuitMainloop, 3)
 
 
-class ScriptExecuter(Screen):
-
+class nssConfig(ConfigListScreen, Screen):
     def __init__(self, session):
         Screen.__init__(self, session)
-
         self.session = session
-        skin = os.path.join(skin_path, 'scriptpanel.xml')
-        with codecs.open(skin, "r", encoding="utf-8") as f:
-            self.skin = f.read()
-        self.setTitle(name_plug)
-
-        self['labstatus'] = Label(_('NO SCRIPT FOUND'))
-        self['key_red'] = Label(_('Exit'))
-        self['key_green'] = Label(_('Execute'))
-        self.mlist = []
-        self.populateScript()
-        self['list'] = List(self.mlist)
-        self['list'].onSelectionChanged.append(self.schanged)
-        self['actions'] = ActionMap(['WizardActions',
-                                     'ColorActions'], {'ok': self.startScript,
-                                                       'back': self.close,
-                                                       'green': self.startScript,
-                                                       'red': self.close})
-        self.onLayoutFinish.append(self.script_sel)
-        self.onShown.append(self.setWindowTitle)
-
-    def setWindowTitle(self):
-        self.setTitle(name_plug)
-
-    def script_sel(self):
-        self['list'].index = 1
-        self['list'].index = 0
-
-    def populateScript(self):
-        try:
-            if not os.path.exists('/usr/script'):
-                mkdir('/usr/script', 493)
-        except:
-            pass
-
-        myscripts = listdir('/usr/script')
-        for fil in myscripts:
-            if fil.find('.sh') != -1:
-                fil2 = fil[:-3]
-                desc = 'N/A'
-                myfil = '/usr/script/' + str(fil)
-                # os.system("sed -i -e 's/\r$//' %s" % myfil)
-                # os.system("sed -i -e 's/^M$//' %s" % myfil)
-                # lululla fixed encode crash on atv py3
-                with codecs.open(myfil, "rb", encoding="latin-1") as f:
-                    for line in f.readlines():
-                        if line.find('#DESCRIPTION=') != -1:
-                            line = line.strip()
-                            desc = line[13:]
-                f.close()
-                res = (fil2, desc)
-                self.mlist.append(res)
-
-    def schanged(self):
-        mysel = self['list'].getCurrent()
-        if mysel:
-            mytext = ' ' + mysel[1]
-            self['labstatus'].setText(str(mytext))
-
-    def startScript(self):
-        if len(self.mlist) >= 0:
-            mysel = self['list'].getCurrent()
-            if mysel:
-                mysel = mysel[0]
-                mysel2 = '/usr/script/' + mysel + '.sh'
-                chmod(mysel2, 0o0755)
-                mytitle = 'NonSoloSat Script: ' + mysel
-                self.session.open(tvConsole, title=mytitle, cmdlist=[mysel2])
-
-
-class nssConfig(Screen, ConfigListScreen):
-    def __init__(self, session):
         skin = os.path.join(skin_path, 'nssConfig.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
-        Screen.__init__(self, session)
-        self.setup_title = _("NSS Addon Config")
+        self.setTitle("NSS Addon Config")
+        self.setup_title = ('Config Panel')
         self.onChangedEntry = []
-        self.session = session
-        self.setTitle(self.setup_title)
+        self.list = []
+        self['title'] = Label(self.setup_title)
         self['description'] = Label()
         self['info'] = Label(_('SELECT YOUR CHOICE'))
-        # self['info'] = ScrollLabel()
         self['key_yellow'] = Button(_('Update'))
         self['key_green'] = Button(_('Save'))
         self['key_red'] = Button(_('Back'))
         self["key_blue"] = Button()
         self['key_blue'].hide()
         self['key_yellow'].hide()
-        self['title'] = Label(self.setup_title)
+        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
+        self.createSetup()
         self["setupActions"] = ActionMap(['OkCancelActions',
                                           'DirectionActions',
                                           'ColorActions',
-                                          'VirtualKeyboardActions',
+                                          # 'VirtualKeyboardActions',
                                           'ActiveCodeActions'], {'cancel': self.extnok,
                                                                  'red': self.extnok,
                                                                  'back': self.close,
-                                                                 # 'left': self.keyLeft,
-                                                                 # 'right': self.keyRight,
-                                                                 # 'yellow': self.tvUpdate,
-                                                                 "showVirtualKeyboard": self.KeyText,
-                                                                 # 'ok': self.Ok_edit,
+                                                                 # "showVirtualKeyboard": self.KeyText,
                                                                  'green': self.msgok}, -1)
-        self.list = []
-        ConfigListScreen.__init__(self, self.list, session=self.session, on_change=self.changedEntry)
-        self.createSetup()
         self.onLayoutFinish.append(self.layoutFinished)
         if self.setInfo not in self['config'].onSelectionChanged:
             self['config'].onSelectionChanged.append(self.setInfo)
@@ -2575,12 +2204,13 @@ class nssConfig(Screen, ConfigListScreen):
                 print('arkget= ', arkFull)
             img = os.popen('cat /etc/issue').read().strip('\n\r')
             arc = os.popen('uname -m').read().strip('\n\r')
+            python = os.popen('python -V').read().strip('\n\r')
             ifg = os.popen('wget -qO - ifconfig.me').read().strip('\n\r')
             img = img.replace('\\l', '')
             libs = os.popen('ls -l /usr/lib/libss*.*').read().strip('\n\r')
             if libs:
                 libsssl = libs
-            info = 'Current IP Wan: %s\nImage Mounted: %s Cpu: %s\nArchitecture information: %s\nLibssl(oscam):\n%s\n' % (ifg, img, arc, arkFull, libsssl)
+            info = 'Current IP Wan: %s\nImage Mounted: %sCpu: %s\nPython:%s\nInfo Hardware: %s\nLibssl(oscam):\n%s\n' % (ifg, img, arc, python, arkFull, libsssl)
             self['info'].setText(info)
         except Exception as e:
             print("Error ", e)
@@ -2589,7 +2219,6 @@ class nssConfig(Screen, ConfigListScreen):
     def createSetup(self):
         self.editListEntry = None
         self.list = []
-
         # self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), mmkpicon, _("Configure folder containing picons files")))
         # self.list.append(getConfigListEntry(_("Path for Picons folder"), mmkpicon, _("Folder containing picons files")))
         # self.list.append(getConfigListEntry(_("Set the path to the Picons folder"), config.usage.picon_dir, _("Configure folder containing picons files")))
@@ -2625,71 +2254,17 @@ class nssConfig(Screen, ConfigListScreen):
         from Screens.Setup import SetupSummary
         return SetupSummary
 
-    # def keyLeft(self):
-        # ConfigListScreen.keyLeft(self)
-        # print("current selection:", self["config"].l.getCurrentSelection())
-        # self.createSetup()
-
-    # def keyRight(self):
-        # ConfigListScreen.keyRight(self)
-        # print("current selection:", self["config"].l.getCurrentSelection())
-        # self.createSetup()
-
     def msgok(self):
         if self['config'].isChanged():
             for x in self["config"].list:
                 x[1].save()
+            configfile.save()
             self.session.open(MessageBox, _('Successfully saved configuration'), MessageBox.TYPE_INFO, timeout=4)
         else:
             self.close(True)
 
-    # def Ok_edit(self):
-        # ConfigListScreen.keyOK(self)
-        # sel = self['config'].getCurrent()[1]
-        # if sel == config.plugins.nssaddon.mmkpicon:
-            # self.setting = 'mmkpicon'
-            # mmkpth = config.plugins.nssaddon.mmkpicon.value
-            # self.openDirectoryBrowser(mmkpth)
-        # else:
-            # pass
-
-    # def openDirectoryBrowser(self, path):
-        # try:
-            # self.session.openWithCallback(
-                # self.openDirectoryBrowserCB,
-                # LocationBox,
-                # windowTitle=_("Choose Directory:"),
-                # text=_("Choose directory"),
-                # currDir=str(path),
-                # bookmarks=config.movielist.videodirs,
-                # autoAdd=False,
-                # editDir=True,
-                # inhibitDirs=["/bin", "/boot", "/dev", "/home", "/lib", "/proc", "/run", "/sbin", "/sys", "/var"],
-                # minFree=15)
-        # except Exception as e:
-            # print('error: ', str(e))
-
-    # def openDirectoryBrowserCB(self, path):
-        # if path is not None:
-            # if self.setting == 'mmkpicon':
-                # config.plugins.nssaddon.mmkpicon.setValue(path)
-            # # if self.setting == 'ipkpth':
-                # # config.plugins.nssaddon.ipkpth.setValue(path)
-        # return
-
-    # def KeyText(self):
-        # sel = self['config'].getCurrent()
-        # if sel:
-            # self.session.openWithCallback(self.VirtualKeyBoardCallback, VirtualKeyBoard, title=self['config'].getCurrent()[0], text=self['config'].getCurrent()[1].value)
-
-    # def VirtualKeyBoardCallback(self, callback=None):
-        # if callback is not None and len(callback):
-            # self['config'].getCurrent()[1].value = callback
-            # self['config'].invalidate(self['config'].getCurrent())
-        # return
-
-    def cancelConfirm(self, result):
-        if not result:
+    def cancelConfirm(self, result=False):
+        if result is False:
             return
         for x in self['config'].list:
             x[1].cancel()
@@ -2702,19 +2277,99 @@ class nssConfig(Screen, ConfigListScreen):
             self.close()
 
 
+class ScriptExecuter(Screen):
+
+    def __init__(self, session):
+        Screen.__init__(self, session)
+        self.session = session
+        skin = os.path.join(skin_path, 'HomeNss.xml')
+        with codecs.open(skin, "r", encoding="utf-8") as f:
+            self.skin = f.read()
+        self.setTitle(name_plug)
+        self.setup_title = ('Scriptpanel')
+        self.mlist = []
+        self.populateScript()
+        self['list'] = List(self.mlist)
+        # self['list'] = MenuList([])
+        self['list'].onSelectionChanged.append(self.schanged)
+        self['info'] = Label(_('NO SCRIPT FOUND'))
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
+        self['key_green'] = Button(_('Execute'))
+        self['key_red'] = Button(_('Back'))
+        self['key_yellow'] = Button()
+        self["key_blue"] = Button()
+        self['key_yellow'].hide()
+        self['key_blue'].hide()
+        self['actions'] = ActionMap(['WizardActions',
+                                     'ColorActions'], {'ok': self.startScript,
+                                                       'back': self.close,
+                                                       'green': self.startScript,
+                                                       'red': self.close})
+        self.onLayoutFinish.append(self.script_sel)
+        self.onShown.append(self.setWindowTitle)
+
+    def setWindowTitle(self):
+        self.setTitle(name_plug)
+
+    def script_sel(self):
+        self['list'].index = 1
+        self['list'].index = 0
+
+    def populateScript(self):
+        try:
+            if not os.path.exists('/usr/script'):
+                mkdir('/usr/script', 493)
+        except:
+            pass
+
+        myscripts = listdir('/usr/script')
+        for fil in myscripts:
+            if fil.find('.sh') != -1:
+                fil2 = fil[:-3]
+                desc = 'N/A'
+                myfil = '/usr/script/' + str(fil)
+                with codecs.open(myfil, "rb", encoding="latin-1") as f:
+                    for line in f.readlines():
+                        if line.find('#DESCRIPTION=') != -1:
+                            line = line.strip()
+                            desc = line[13:]
+                f.close()
+                res = (fil2, desc)
+                self.mlist.append(res)
+
+    def schanged(self):
+        mysel = self['list'].getCurrent()
+        if mysel:
+            mytext = ' ' + mysel[1]
+            self['labstatus'].setText(str(mytext))
+
+    def startScript(self):
+        if len(self.mlist) >= 0:
+            mysel = self['list'].getCurrent()
+            if mysel:
+                mysel = mysel[0]
+                mysel2 = '/usr/script/' + mysel + '.sh'
+                chmod(mysel2, 0o0755)
+                mytitle = 'NonSoloSat Script: ' + mysel
+                self.session.open(tvConsole, title=mytitle, cmdlist=[mysel2])
+
+
 class SelectPiconz(Screen):
     def __init__(self, session):
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self['list'] = nssList([])
-        self['pth'] = Label()
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
-        self['pform'] = Label()
+        # self['list'] = MenuList([])
+
         self['info'] = Label()
         self['info'].setText(_('Loading data... Please wait'))
         self['key_green'] = Button(_('Select'))
@@ -2724,9 +2379,13 @@ class SelectPiconz(Screen):
         # self['key_yellow'].hide()
         self['key_blue'].hide()
         self['key_green'].hide()
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
+
         self['title'] = Label(self.setup_title)
         self['actions'] = ActionMap(['OkCancelActions',
                                      'ColorActions'], {'ok': self.okRun,
@@ -2781,7 +2440,7 @@ class SelectPiconz(Screen):
     def remove(self):
         self.session.openWithCallback(self.remove1, MessageBox, _("Do you want to install?"), MessageBox.TYPE_YESNO)
 
-    def remove1(self, answer):
+    def remove1(self, answer=False):
         if answer:
             self['info'].setText(_('Erase %s... please wait' % str(mmkpicon)))
             piconsx = glob.glob(str(mmkpicon) + '/*.png')
@@ -2796,22 +2455,22 @@ class SelectPiconz(Screen):
 
 class MMarkFolderz(Screen):
     def __init__(self, session, url):
+        Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'tvall.xml')
+        skin = os.path.join(skin_path, 'HomeNss.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
         self['info'] = Label(_('Loading data... Please wait'))
-        self['pth'] = Label()
-        self['pth'].setText(_('Folder picons ') + str(mmkpicon))
-        self['pform'] = Label()
-        self['progress'] = ProgressBar()
-        self["progress"].hide()
-        self['progresstext'] = StaticText()
+        self['statusgreen'] = Pixmap()
+        self['statusgreen'].hide()
+        self['statusred'] = Pixmap()
+        self['statusred'].hide()
+        self['status'] = Label('Please wait..')
         self['key_green'] = Button(_('Select'))
         self['key_red'] = Button(_('Back'))
         self['key_yellow'] = Button()
@@ -2892,15 +2551,17 @@ class MMarkFolderz(Screen):
 
 class MMarkPiconsf(Screen):
     def __init__(self, session, name, url, movie=False):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('NSS Addon Picons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
+
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label()
         self['pth'].setText(_('Folder picons ') + str(mmkpicon))
@@ -2915,7 +2576,7 @@ class MMarkPiconsf(Screen):
         self['key_yellow'].hide()
         self['key_blue'].hide()
         self['key_green'].hide()
-        self.getfreespace()
+
         self.downloading = False
         self.movie = movie
         self.url = url
@@ -2942,11 +2603,6 @@ class MMarkPiconsf(Screen):
 
     def getfreespace(self):
         try:
-            # self.downloading = False
-            # self['progresstext'].text = ''
-            # self['progress'].setValue(self.progclear)
-            # self["progress"].hide()
-            # self['info'].setText(_('Please select ...'))
             fspace = Utils.freespace()
             self['pform'].setText(str(fspace))
         except Exception as e:
@@ -3001,19 +2657,19 @@ class MMarkPiconsf(Screen):
                 self.name = self.names[idx]
                 url = self.urls[idx]
                 dest = "/tmp/download.zip"
-                print('url333: ', url)
-                if os.path.exists(dest):
+                # print('url333: ', url)
+                if os.path.exists(dest) and '.zip' in dest:
                     os.remove(dest)
                 try:
                     myfile = Utils.ReadUrl(url)
-                    print('response: ', myfile)
+                    # print('response: ', myfile)
                     regexcat = 'href="https://download(.*?)"'
                     match = re.compile(regexcat, re.DOTALL).findall(myfile)
-                    print("match =", match[0])
+                    # print("match =", match[0])
                     # myfile = checkMyFile(url)
                     # print('myfile222:  ', myfile)
                     url = 'https://download' + str(match[0])
-                    print("url final =", url)
+                    # print("url final =", url)
                     # myfile = checkMyFile(url)
                     # print('myfile222:  ', myfile)
                     # # url =  'https://download' + str(myfile)
@@ -3040,7 +2696,7 @@ class MMarkPiconsf(Screen):
         if error_message == "" and failure_instance is not None:
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
-        info = 'Download Failed!!! ' + str(self.error_message)
+        info = _('Download Failed!') + str(self.error_message)
         self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
@@ -3049,6 +2705,8 @@ class MMarkPiconsf(Screen):
         if self.download:
             self.download.stop()
             self.getfreespace()
+        self.downloading = False
+        self.aborted = True
 
     def download_finished(self, string=""):
         if self.aborted:
@@ -3073,15 +2731,16 @@ class MMarkPiconsf(Screen):
 
 class OpenPicons(Screen):
     def __init__(self, session, name, url):
+        Screen.__init__(self, session)
         self.session = session
         skin = os.path.join(skin_path, 'tvall.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setup_title = ('OpenPicons')
-        Screen.__init__(self, session)
-        self.setTitle(self.setup_title)
+        self.setTitle(name_plug)
         self.list = []
         self['list'] = nssList([])
+        # self['list'] = MenuList([])
         self['info'] = Label(_('Loading data... Please wait'))
         self['pth'] = Label()
         self['pth'].setText(_('Folder picons ') + str(mmkpicon))
@@ -3140,8 +2799,6 @@ class OpenPicons(Screen):
             self._gotPageLoad(data)
         except Exception as e:
             print('no link valid: ', e)
-        # getPage(url).addCallback(self._gotPageLoad).addErrback(self.errorLoad)
-        # https://openpicons.com/picons/?dir=full-motor-srp
 
     def errorLoad(self):
         self['info'].setText(_('Try again later ...'))
@@ -3157,7 +2814,7 @@ class OpenPicons(Screen):
             regex = 'full-motor-srp/hardlink/(.*?).tar.xz"'
             match = re.compile(regex, re.DOTALL).findall(r)
             for url in match:
-                # full-motor-srp/hardlink/srp-full.100x60-86x46.dark.on.blue_2023-12-12--23-58-23.hardlink.tar.xz"
+                # https://openpicons.com/picons/full-motor-srp/hardlink/srp-full.100x60-86x46.light.on.transparent_2024-08-10--16-32-09.hardlink.tar.xz
                 name = url.replace('.hardlink', '').replace('.', '-').replace('_', '-')
                 url = 'https://openpicons.com/picons/full-motor-srp/hardlink/' + url + '.tar.xz'
                 self.urls.append(url)
@@ -3172,17 +2829,13 @@ class OpenPicons(Screen):
     def okRun(self):
         self.session.openWithCallback(self.okRun1, MessageBox, _("Do you want to install?\nATTENTION: MAKE SURE YOU HAVE ENOUGH SPACE\nTHERE ARE A LOT OF PICONS AND IT TAKES TIME!!!"), MessageBox.TYPE_YESNO)
 
-    def okRun1(self, answer):
+    def okRun1(self, answer=False):
         if answer:
             if self.downloading is True:
                 idx = self["list"].getSelectionIndex()
                 self.name = self.names[idx]
                 url = self.urls[idx]
                 print('1 url type=', type(url))
-                # url = six.ensure_binary(url)
-                # print('2 url type=', type(url))
-                # if PY3:
-                    # url = url.encode()
                 self.dest = "/tmp/download.tar.xz"
                 if os.path.exists(self.dest):
                     os.remove(self.dest)
@@ -3204,7 +2857,7 @@ class OpenPicons(Screen):
         if error_message == "" and failure_instance is not None:
             self.error_message = failure_instance.getErrorMessage()
         self.downloading = False
-        info = 'Download Failed!!! ' + str(self.error_message)
+        info = _('Download Failed!') + str(self.error_message)
         self['info'].setText(info)
         self.session.open(MessageBox, _(info), MessageBox.TYPE_INFO, timeout=5)
 
@@ -3281,29 +2934,16 @@ def main(session, **kwargs):
         pass
 
 
-def cfgmain(menuid, **kwargs):
-    if menuid == 'mainmenu':
-        return [(_('Nss Addons'), main, 'Nss Addon', 4)]
-    else:
-        return []
-
-
 def cfgcam(menuid, **kwargs):
-    if menuid == 'cam':
-        from Tools.BoundFunction import boundFunction
-        return [(_(name_cam),
-                 boundFunction(main2, showExtentionMenuOption=True),
-                 'NSS Cam Manager',
-                 -1)]
-    else:
-        return []
+    return [(name_cam, main2, 'www.nonsolosat.net NSS Cam Manager', 44)] if menuid == "cam" else []
+
+
+def cfgmain(menuid, **kwargs):
+    return [('Nss Addons', main, 'www.nonsolosat.net (Addons Panel)', 44)] if menuid == "mainmenu" else []
 
 
 def main2(session, **kwargs):
-    # from Plugins.Extensions.nssaddon.CamEx import NSSCamsManager
-    # session.open(NSSCamsManager)
     from Plugins.Extensions.Manager.plugin import Manager
-    # self.session.openWithCallback(self.close, Manager)
     session.open(Manager)
 
 
@@ -3325,227 +2965,24 @@ def Plugins(**kwargs):
     return result
 
 
-def terrestrial():
-    SavingProcessTerrestrialChannels = StartSavingTerrestrialChannels()
-    import time
-    now = time.time()
-    ttime = time.localtime(now)
-    tt = str('{0:02d}'.format(ttime[2])) + str('{0:02d}'.format(ttime[1])) + str(ttime[0])[2:] + '_' + str('{0:02d}'.format(ttime[3])) + str('{0:02d}'.format(ttime[4])) + str('{0:02d}'.format(ttime[5]))
-    os.system('tar -czvf /tmp/' + tt + '_enigma2settingsbackup.tar.gz' + ' -C / /etc/enigma2/*.tv /etc/enigma2/*.radio /etc/enigma2/lamedb')
-    if SavingProcessTerrestrialChannels:
-        print('SavingProcessTerrestrialChannels')
-    return
+def copy_files_to_enigma2():
+    import shutil
+    IptvChArch = plugin_path + '/temp'
+    enigma2_folder = "/etc/enigma2"
+    bouquet_file = os.path.join(enigma2_folder, "bouquets.tv")
 
+    # Copia i file dalla cartella temporanea a /etc/enigma2
+    for filename in os.listdir(IptvChArch):
+        if filename.endswith(".tv"):
+            src_path = os.path.join(IptvChArch, filename)
+            dst_path = os.path.join(enigma2_folder, filename)
+            shutil.copy(src_path, dst_path)
 
-def terrestrial_rest():
-    if LamedbRestore():
-        TransferBouquetTerrestrialFinal()
-        # terrr = os.path.join(plugin_path, 'temp/TerrestrialChannelListArchive')
-        terrr = plugin_path + '/temp/TerrestrialChannelListArchive'
-        if os.path.exists(terrr):
-            os.system("cp -rf " + plugin_path + "/temp/TerrestrialChannelListArchive /etc/enigma2/userbouquet.terrestrial.tv")
-        os.system('cp -rf /etc/enigma2/bouquets.tv /etc/enigma2/backup_bouquets.tv')
-        with open('/etc/enigma2/bouquets.tv', 'r+') as f:
-            bouquetTvString = '#SERVICE 1:7:1:0:0:0:0:0:0:0:FROM BOUQUET "userbouquet.terrestrial.tv" ORDER BY bouquet\n'
-            if bouquetTvString not in f:
-                new_bouquet = open('/etc/enigma2/new_bouquets.tv', 'w')
-                new_bouquet.write('#NAME User - bouquets (TV)\n')
-                new_bouquet.write('#SERVICE 1:7:1:0:0:0:0:0:0:0:FROM BOUQUET "userbouquet.terrestrial.tv" ORDER BY bouquet\n')
-                file_read = open('/etc/enigma2/bouquets.tv').readlines()
-                for line in file_read:
-                    if line.startswith("#NAME"):
-                        continue
-                    new_bouquet.write(line)
-                new_bouquet.close()
-                os.system('cp -rf /etc/enigma2/bouquets.tv /etc/enigma2/backup_bouquets.tv')
-                os.system('mv -f /etc/enigma2/new_bouquets.tv /etc/enigma2/bouquets.tv')
-        if os.path.exists('/etc/enigma2/lcndb'):
-            lcnstart()
+            # Aggiungi il nome del file al file bouquet.tv
+            with open(bouquet_file, "r+") as f:
+                line = '#SERVICE 1:7:1:0:0:0:0:0:0:0:FROM BOUQUET "{}" ORDER BY bouquet\n'.format(filename)
+                if line not in f:
+                    f.write(line)
+    print("Operazione completata!")
 
-
-def lcnstart():
-    print(' lcnstart ')
-    if os.path.exists('/etc/enigma2/lcndb'):
-        lcn = LCN()
-        lcn.read()
-        if len(lcn.lcnlist) > 0:
-            lcn.writeBouquet()
-            ReloadBouquets()
-    return
-
-
-def StartSavingTerrestrialChannels():
-
-    def ForceSearchBouquetTerrestrial():
-        for file in sorted(glob.glob("/etc/enigma2/*.tv")):
-            f = open(file, "r").read()
-            x = f.strip().lower()
-            if x.find('eeee') != -1:
-                return file
-                break
-        return
-
-    def ResearchBouquetTerrestrial(search):
-        for file in sorted(glob.glob("/etc/enigma2/*.tv")):
-            f = open(file, "r").read()
-            x = f.strip().lower()
-            x1 = f.strip()
-            if x1.find("#NAME") != -1:
-                if x.lower().find(search.lower()) != -1:
-                    if x.find('eeee') != -1:
-                        return file
-                        break
-        return
-
-    def SaveTrasponderService():
-        TrasponderListOldLamedb = open(TransOldLamedb, 'w')
-        ServiceListOldLamedb = open(ServOldLamedb, 'w')
-        Trasponder = False
-        inTransponder = False
-        inService = False
-        try:
-            LamedbFile = open(ee2ldb, 'r')
-            while 1:
-                line = LamedbFile.readline()
-                if not line:
-                    break
-                if not (inTransponder or inService):
-                    if line.find('transponders') == 0:
-                        inTransponder = True
-                    if line.find('services') == 0:
-                        inService = True
-                if line.find('end') == 0:
-                    inTransponder = False
-                    inService = False
-                line = line.lower()
-                if line.find('eeee') != -1:
-                    Trasponder = True
-                    if inTransponder:
-                        TrasponderListOldLamedb.write(line)
-                        line = LamedbFile.readline()
-                        TrasponderListOldLamedb.write(line)
-                        line = LamedbFile.readline()
-                        TrasponderListOldLamedb.write(line)
-                    if inService:
-                        tmp = line.split(':')
-                        ServiceListOldLamedb.write(tmp[0] + ":" + tmp[1] + ":" + tmp[2] + ":" + tmp[3] + ":" + tmp[4] + ":0\n")
-                        line = LamedbFile.readline()
-                        ServiceListOldLamedb.write(line)
-                        line = LamedbFile.readline()
-                        ServiceListOldLamedb.write(line)
-            TrasponderListOldLamedb.close()
-            ServiceListOldLamedb.close()
-            if not Trasponder:
-                os.system('rm -fr ' + TransOldLamedb)
-                os.system('rm -fr ' + ServOldLamedb)
-        except:
-            pass
-        return Trasponder
-
-    def CreateBouquetForce():
-        WritingBouquetTemporary = open(TerChArch, 'w')
-        WritingBouquetTemporary.write('#NAME terrestre\n')
-        ReadingTempServicelist = open(ServOldLamedb, 'r').readlines()
-        for jx in ReadingTempServicelist:
-            if jx.find('eeee') != -1:
-                String = jx.split(':')
-                WritingBouquetTemporary.write('#SERVICE 1:0:%s:%s:%s:%s:%s:0:0:0:\n' % (hex(int(String[4]))[2:], String[0], String[2], String[3], String[1]))
-        WritingBouquetTemporary.close()
-
-    def SaveBouquetTerrestrial():
-        NameDirectory = ResearchBouquetTerrestrial('terr')
-        if not NameDirectory:
-            NameDirectory = ForceSearchBouquetTerrestrial()
-        try:
-            shutil.copyfile(NameDirectory, TerChArch)
-            return True
-        except:
-            pass
-        return
-    Service = SaveTrasponderService()
-    if Service:
-        if not SaveBouquetTerrestrial():
-            CreateBouquetForce()
-        return True
-    return
-
-
-def LamedbRestore():
-    try:
-        TrasponderListNewLamedb = open(plugin_path + '/temp/TrasponderListNewLamedb', 'w')
-        ServiceListNewLamedb = open(plugin_path + '/temp/ServiceListNewLamedb', 'w')
-        inTransponder = False
-        inService = False
-        infile = open(ee2ldb, 'r')
-        while 1:
-            line = infile.readline()
-            if not line:
-                break
-            if not (inTransponder or inService):
-                if line.find('transponders') == 0:
-                    inTransponder = True
-                if line.find('services') == 0:
-                    inService = True
-            if line.find('end') == 0:
-                inTransponder = False
-                inService = False
-            if inTransponder:
-                TrasponderListNewLamedb.write(line)
-            if inService:
-                ServiceListNewLamedb.write(line)
-        TrasponderListNewLamedb.close()
-        ServiceListNewLamedb.close()
-        WritingLamedbFinal = open(ee2ldb, "w")
-        WritingLamedbFinal.write("eDVB services /4/\n")
-        TrasponderListNewLamedb = open(plugin_path + '/temp/TrasponderListNewLamedb', 'r').readlines()
-        for x in TrasponderListNewLamedb:
-            WritingLamedbFinal.write(x)
-        try:
-            TrasponderListOldLamedb = open(TransOldLamedb, 'r').readlines()
-            for x in TrasponderListOldLamedb:
-                WritingLamedbFinal.write(x)
-        except:
-            pass
-        WritingLamedbFinal.write("end\n")
-        ServiceListNewLamedb = open(plugin_path + '/temp/ServiceListNewLamedb', 'r').readlines()
-        for x in ServiceListNewLamedb:
-            WritingLamedbFinal.write(x)
-        try:
-            ServiceListOldLamedb = open(ServOldLamedb, 'r').readlines()
-            for x in ServiceListOldLamedb:
-                WritingLamedbFinal.write(x)
-        except:
-            pass
-        WritingLamedbFinal.write("end\n")
-        WritingLamedbFinal.close()
-        return True
-    except:
-        return False
-
-
-def TransferBouquetTerrestrialFinal():
-
-    def RestoreTerrestrial():
-        for file in os.listdir("/etc/enigma2/"):
-            if re.search('^userbouquet.*.tv', file):
-                f = open("/etc/enigma2/" + file, "r")
-                x = f.read()
-                if re.search('#NAME Digitale Terrestre', x, flags=re.IGNORECASE) or re.search('#NAME DTT', x, flags=re.IGNORECASE):  # for disa51
-                    return "/etc/enigma2/" + file
-        return
-
-    try:
-        TerrestrialChannelListArchive = open(TerChArch, 'r').readlines()
-        DirectoryUserBouquetTerrestrial = RestoreTerrestrial()
-        if DirectoryUserBouquetTerrestrial:
-            TrasfBouq = open(DirectoryUserBouquetTerrestrial, 'w')
-            for Line in TerrestrialChannelListArchive:
-                if Line.lower().find('#name') != -1:
-                    TrasfBouq.write('#NAME Digitale Terrestre\n')
-                else:
-                    TrasfBouq.write(Line)
-            TrasfBouq.close()
-            return True
-    except:
-        return False
-    return
+# ===== by lululla
