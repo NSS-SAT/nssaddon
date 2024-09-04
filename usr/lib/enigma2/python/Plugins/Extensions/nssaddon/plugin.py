@@ -23,6 +23,7 @@ from .lib.Utils import RequestAgent
 from .lib.Downloader import downloadWithProgress
 from .lib.Lcn import (
     LCN,
+    LCNBuildHelper,
     terrestrial,
     terrestrial_rest,
     ReloadBouquets,
@@ -253,7 +254,6 @@ if not os.path.exists(plugin_temp):
         print(('Error creating directory %s:\n%s') % (plugin_temp, str(e)))
 
 
-
 ServiceListNewLamedb = plugin_path + '/temp/ServiceListNewLamedb'
 TrasponderListNewLamedb = plugin_path + '/temp/TrasponderListNewLamedb'
 ServOldLamedb = plugin_path + '/temp/ServiceListOldLamedb'
@@ -424,6 +424,16 @@ class HomeNss(Screen):
                 # self.names.append('Plugin Script')
                 self.xmlparse = minidom.parseString(self.xml)
                 for plugins in self.xmlparse.getElementsByTagName('plugins'):
+                    if config.ParentalControl.configured.value:
+                        if 'adult' in str(plugins.getAttribute('cont')).lower():
+                            continue
+                    if not os.path.exists('/var/lib/dpkg/info'):
+                        if 'dreamos' in str(plugins.getAttribute('cont')).lower():
+                            continue
+
+                    if os.path.exists('/var/lib/dpkg/info'):
+                        if 'dreamos' not in str(plugins.getAttribute('cont')).lower():
+                            continue
                     self.names.append(str(plugins.getAttribute('cont')))
                 self['info'].setText('Select')
                 self["list"].l.setList(self.names)
@@ -609,7 +619,6 @@ class AddonPackagesGroups(Screen):
     def prombt(self):
         self.plug = self.com.split("/")[-1]
         self.folddest = '/tmp/' + self.plug
-
         if ".deb" in self.plug:
             cmd2 = "dpkg -i '/tmp/" + self.plug + "'"
         if ".ipk" in self.plug:
@@ -684,16 +693,30 @@ class NssDailySetting(Screen):
         self['info'].setText(_('Please select ...'))
 
     def Lcn(self):
+        '''
         sets = 0
-        if self.LcnOn:
-            lcn = LCN()
-            lcn.read()
-            if len(lcn.lcnlist) >= 1:
-                lcn.writeBouquet()
-                ReloadBouquets(sets)
-                self.session.open(MessageBox, _('Sorting Terrestrial channels with Lcn rules Completed'),
-                                  MessageBox.TYPE_INFO,
-                                  timeout=5)
+        # if self.LcnOn:
+            # lcn = LCN()
+            # lcn.read()
+            # if len(lcn.lcnlist) >= 1:
+                # lcn.writeBouquet()
+                # ReloadBouquets(sets)
+                # self.session.open(MessageBox, _('Sorting Terrestrial channels with Lcn rules Completed'),
+                                  # MessageBox.TYPE_INFO,
+                                  # timeout=5)
+        '''
+
+        try:
+            lcn = LCNBuildHelper()
+            lcn.buildAfterScan()
+            self.session.open(MessageBox, _('Sorting Terrestrial Executed!'),
+                              MessageBox.TYPE_INFO,
+                              timeout=5)
+        except Exception as e:
+            print(e)
+            self.session.open(MessageBox, _('Sorting Terrestrial not Executed!'),
+                              MessageBox.TYPE_INFO,
+                              timeout=5)
 
     def closerm(self):
         self.close()
@@ -2286,7 +2309,7 @@ class ScriptExecuter(Screen):
     def __init__(self, session):
         Screen.__init__(self, session)
         self.session = session
-        skin = os.path.join(skin_path, 'HomeNss.xml')
+        skin = os.path.join(skin_path, 'scriptpanel.xml')
         with codecs.open(skin, "r", encoding="utf-8") as f:
             self.skin = f.read()
         self.setTitle(name_plug)
@@ -2297,6 +2320,7 @@ class ScriptExecuter(Screen):
         # self['list'] = MenuList([])
         self['list'].onSelectionChanged.append(self.schanged)
         self['info'] = Label(_('NO SCRIPT FOUND'))
+        self['labstatus'] = Label(_('SELECT'))
         self['statusgreen'] = Pixmap()
         self['statusgreen'].hide()
         self['statusred'] = Pixmap()
@@ -2314,6 +2338,7 @@ class ScriptExecuter(Screen):
                                                        'green': self.startScript,
                                                        'red': self.close})
         self.onLayoutFinish.append(self.script_sel)
+        # self.onLayoutFinish.append(self.populateScript)
         self.onShown.append(self.setWindowTitle)
 
     def setWindowTitle(self):
@@ -2322,6 +2347,7 @@ class ScriptExecuter(Screen):
     def script_sel(self):
         self['list'].index = 1
         self['list'].index = 0
+        self['info'].setText('SELECT')
 
     def populateScript(self):
         try:
