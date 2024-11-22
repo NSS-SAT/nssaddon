@@ -21,15 +21,18 @@ from .Console import Console as tvConsole
 from .lib import Utils
 from .lib.Utils import RequestAgent
 from .lib.Downloader import downloadWithProgress
+
 from .lib.Lcn import (
     LCN,
     LCNBuildHelper,
-    terrestrial,
     terrestrial_rest,
     ReloadBouquets,
-    keepiptv,
     copy_files_to_enigma2,
+    keepiptv,
+    terrestrial,
 )
+from .lib.plugin import LCNScanner
+
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.ConfigList import ConfigListScreen
@@ -77,6 +80,8 @@ import ssl
 import subprocess
 import sys
 from xml.dom import minidom
+
+lcnscanners = LCNScanner()
 
 global skin_path, sets, category
 # mmkpicon = config.usage.picon_dir.value()
@@ -228,7 +233,10 @@ config.plugins.nssaddon.strtext = ConfigYesNo(default=True)
 config.plugins.nssaddon.strtmain = ConfigYesNo(default=False)
 # config.plugins.nssaddon.mmkpicon = ConfigDirectory(default='/picon/')
 # config.plugins.nssaddon.ipkpth = ConfigSelection(default="/tmp", choices=mountipkpth())
-mmkpicon = config.usage.picon_dir.value.strip()
+try:
+    mmkpicon = config.usage.picon_dir.value.strip()
+except Exception as e:
+    mmkpicon = '/picon/'
 currversion = '1.0.0'
 title_plug = 'NSS Addon V. %s' % currversion
 name_plug = 'NSS Addon'
@@ -380,7 +388,7 @@ class HomeNss(Screen):
                                                            'back': self.closerm,
                                                            'cancel': self.closerm}, -1)
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downloadxmlpage)
         else:
             self.timer.callback.append(self.downloadxmlpage)
@@ -427,12 +435,12 @@ class HomeNss(Screen):
                     if config.ParentalControl.configured.value:
                         if 'adult' in str(plugins.getAttribute('cont')).lower():
                             continue
-                    if not os.path.exists('/var/lib/dpkg/info'):
-                        if 'dreamos' in str(plugins.getAttribute('cont')).lower():
+                    if not os.path.exists("/usr/bin/apt-get"):
+                        if 'oe2.2' in str(plugins.getAttribute('cont')).lower():
                             continue
 
-                    if os.path.exists('/var/lib/dpkg/info'):
-                        if 'dreamos' not in str(plugins.getAttribute('cont')).lower():
+                    if os.path.exists("/usr/bin/apt-get"):
+                        if 'oe2.2' not in str(plugins.getAttribute('cont')).lower():
                             continue
                     self.names.append(str(plugins.getAttribute('cont')))
                 self['info'].setText('Select')
@@ -585,7 +593,7 @@ class AddonPackagesGroups(Screen):
                                 # test lululla
                                 self.com = self.com.replace('"', '')
                                 if ".deb" in self.com:
-                                    if not os.path.exists('/var/lib/dpkg/info'):
+                                    if not os.path.exists("/usr/bin/apt-get"):
                                         self.session.open(MessageBox,
                                                           _('Unknow Image!'),
                                                           MessageBox.TYPE_INFO,
@@ -595,7 +603,7 @@ class AddonPackagesGroups(Screen):
                                     self.dom = self.com[:n2]
 
                                 if ".ipk" in self.com:
-                                    if os.path.exists('/var/lib/dpkg/info'):
+                                    if os.path.exists("/usr/bin/apt-get"):
                                         self.session.open(MessageBox,
                                                           _('Unknow Image!'),
                                                           MessageBox.TYPE_INFO,
@@ -666,7 +674,8 @@ class NssDailySetting(Screen):
         self['key_yellow'].hide()
         self['key_green'].hide()
         self.LcnOn = False
-        if os.path.exists('/etc/enigma2/lcndb'):
+        dbfile = '/var/etc/enigma2/lcndb'
+        if os.path.exists(dbfile):
             self['key_yellow'].show()
             self['key_yellow'] = Button('Lcn')
             self.LcnOn = True
@@ -693,6 +702,38 @@ class NssDailySetting(Screen):
             self['status'].setText('SERVER OFF')
         self.setTitle(name_plug)
         self['info'].setText(_('Please select ...'))
+
+    # def Lcn(self, answer=None):
+        # if answer is None:
+            # self.session.openWithCallback(self.Lcn,
+                                          # MessageBox, _("Do you want to Order LCN Bouquet?"),
+                                          # MessageBox.TYPE_YESNO)
+        # else:
+            # print('Starting LCN scan...')
+            # try:
+                # # Usare l'istanza di LCNScanner
+                # LCN = lcnscanners.lcnScan()
+                # print("LCN Scanner returned:", LCN)
+
+                # if LCN:
+                    # # Apri la schermata restituita da LCN
+                    # self.session.open(LCN)
+                # else:
+                    # print("Error: LCN scan did not return a valid screen.")
+                    # # Puoi aggiungere un messaggio all'utente per avvisare del problema
+                    # self.session.open(MessageBox, _('[LCNScanner] LCN scan failed: No channels were found.'),
+                                      # MessageBox.TYPE_INFO, timeout=5)
+            # except Exception as e:
+                # print("Exception during LCN scan:", e)
+
+            # try:
+                # self.session.open(MessageBox, _('[LCNScanner] LCN scan finished.\nChannels Ordered!'),
+                                  # MessageBox.TYPE_INFO, timeout=5)
+            # except RuntimeError as re:
+                # print("RuntimeError during MessageBox display:", re)
+
+    def _onLCNScanFinished(self, result=None):
+        pass
 
     def Lcn(self):
         '''
@@ -847,7 +888,7 @@ class SettingCiefpz(Screen):
         self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -982,7 +1023,7 @@ class SettingManutekz(Screen):
         self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -1113,7 +1154,7 @@ class SettingMorpheusz(Screen):
         self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -1253,7 +1294,7 @@ class SettingVhan11(Screen):
         self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -1382,7 +1423,7 @@ class SettingVhan22(Screen):
         self['key_green'].hide()
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -1608,7 +1649,7 @@ class NssInstall(Screen):
                 self['info'].setText(_('Installation done !!!'))
 
             elif extension == "deb":
-                if not os.path.exists('/var/lib/dpkg/info'):
+                if not os.path.exists("/usr/bin/apt-get"):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Installation canceled!'))
                 else:
@@ -1619,7 +1660,7 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
 
             elif extension == "ipk":
-                if os.path.exists('/var/lib/dpkg/info'):
+                if os.path.exists("/usr/bin/apt-get"):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Installation canceled!'))
                 else:
@@ -1630,7 +1671,7 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
             elif self.com.endswith('.zip'):
                 if 'setting' in self.dom.lower():
-                    if not os.path.exists('/var/lib/dpkg/info'):
+                    if not os.path.exists("/usr/bin/apt-get"):
                         sets = 1
                         terrestrial()
                     if os.path.exists("/tmp/unzipped"):
@@ -1739,17 +1780,17 @@ class NssInstall(Screen):
                     self['info'].setText(_('Installation done !!!'))
                     return
 
-                if extension == "deb" and not os.path.exists('/var/lib/dpkg/info'):
+                if extension == "deb" and not os.path.exists("/usr/bin/apt-get"):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
 
-                elif extension == ".ipk" and os.path.exists('/var/lib/dpkg/info'):
+                elif extension == ".ipk" and os.path.exists("/usr/bin/apt-get"):
                     self.session.open(MessageBox, _('Unknow Image!'), MessageBox.TYPE_INFO, timeout=5)
                     self['info'].setText(_('Download canceled!'))
                     return
                 else:
-                    if os.path.exists('/var/lib/dpkg/info'):
+                    if os.path.exists("/usr/bin/apt-get"):
                         cmd = ["wget --no-check-certificate -U '%s' -c '%s' -O '%s' --post-data='action=purge' > /dev/null" % (RequestAgent(), str(self.com), self.dest)]
                         print('command:', cmd)
                         subprocess.Popen(cmd[0], shell=True, executable='/bin/bash')
@@ -1975,7 +2016,7 @@ class NssIPK(Screen):
                     cmd0 = 'tar -xvf ' + self.dest + ' -C /'
                     self.session.open(tvConsole, title='TAR GZ Local Installation', cmdlist=[cmd0, 'sleep 5'], closeOnSuccess=False)
                 elif self.sel.endswith('.deb'):
-                    if os.path.exists('/var/lib/dpkg/info'):
+                    if os.path.exists("/usr/bin/apt-get"):
                         # apt-get install -f -y
                         cmd0 = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Install ' + self.dest + '";apt-get -f -y --force-yes install %s > /dev/null' % self.dest
                         self.session.open(tvConsole, title='DEB Local Installation', cmdlist=[cmd0], closeOnSuccess=False)
@@ -1988,7 +2029,7 @@ class NssIPK(Screen):
                         cmd = ['unzip -o -q %s -d %s' % (self.dest, str(mmkpicon))]
                         self.session.open(tvConsole, _('Installing: %s') % self.dest, cmdlist=[cmd], closeOnSuccess=False)
                     elif 'setting' in self.sel.lower():
-                        if not os.path.exists('/var/lib/dpkg/info'):
+                        if not os.path.exists("/usr/bin/apt-get"):
                             global sets
                             sets = 1
                             terrestrial()
@@ -2117,7 +2158,7 @@ class NssRemove(Screen):
         self.list = self.names
         self["list"].l.setList(self.list)
         path = ('/var/lib/opkg/info')
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             path = ('/var/lib/dpkg/info')
         try:
             for root, dirs, files in os.walk(path):
@@ -2127,7 +2168,7 @@ class NssRemove(Screen):
                             continue
                         if name.endswith('.md5sums') or name.endswith('.conffiles') or name.endswith('~'):
                             continue
-                        if os.path.exists('/var/lib/dpkg/info'):
+                        if os.path.exists("/usr/bin/apt-get"):
                             if name.endswith('.list'):
                                 name = name.replace('.list', '')
                         else:
@@ -2153,7 +2194,7 @@ class NssRemove(Screen):
             idx = self['list'].getSelectionIndex()
             dom = self.names[idx]
             com = dom
-            if os.path.exists('/var/lib/dpkg/info'):
+            if os.path.exists("/usr/bin/apt-get"):
                 try:
                     cmd = 'echo "Sistem Update .... PLEASE WAIT ::.....";echo ":Remove %s";dpkg -P %s' % (com, com)
                     self.session.open(tvConsole, title='DEB Local Remove', cmdlist=[cmd], closeOnSuccess=False)
@@ -2518,7 +2559,7 @@ class MMarkFolderz(Screen):
         self.url = url
         self.downloading = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -2625,7 +2666,7 @@ class MMarkPiconsf(Screen):
         self.download = None
         self.aborted = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
@@ -2805,7 +2846,7 @@ class OpenPicons(Screen):
         self.download = None
         self.aborted = False
         self.timer = eTimer()
-        if os.path.exists('/var/lib/dpkg/info'):
+        if os.path.exists("/usr/bin/apt-get"):
             self.timer_conn = self.timer.timeout.connect(self.downxmlpage)
         else:
             self.timer.callback.append(self.downxmlpage)
