@@ -237,7 +237,8 @@ try:
     mmkpicon = config.usage.picon_dir.value.strip()
 except Exception as e:
     mmkpicon = '/picon/'
-currversion = '1.0.0'
+    print(e)
+currversion = '1.0.1'
 title_plug = 'NSS Addon V. %s' % currversion
 name_plug = 'NSS Addon'
 name_cam = 'NSS Cam Manager'
@@ -551,13 +552,13 @@ class AddonPackagesGroups(Screen):
         for plugins in self.xmlparse.getElementsByTagName('plugins'):
             if str(plugins.getAttribute('cont')) == self.selection:
                 for plugin in plugins.getElementsByTagName('plugin'):
-                    adlist.append(str(plugin.getAttribute('name')))
+                    if str(plugin.getAttribute('name')) not in adlist:
+                        # print('PLUGIN APPEND IN ADLIST=', str(plugin.getAttribute('name')))
+                        adlist.append(str(plugin.getAttribute('name')))
                 continue
 
         adlist.sort()
-
         self['list'] = MenuList(adlist)
-
         self['actions'] = ActionMap(['OkCancelActions'], {'cancel': self.close,
                                                           'ok': self.msginstal,
                                                           }, -2)
@@ -703,6 +704,7 @@ class NssDailySetting(Screen):
         self.setTitle(name_plug)
         self['info'].setText(_('Please select ...'))
 
+    '''
     # def Lcn(self, answer=None):
         # if answer is None:
             # self.session.openWithCallback(self.Lcn,
@@ -731,6 +733,7 @@ class NssDailySetting(Screen):
                                   # MessageBox.TYPE_INFO, timeout=5)
             # except RuntimeError as re:
                 # print("RuntimeError during MessageBox display:", re)
+    '''
 
     def _onLCNScanFinished(self, result=None):
         pass
